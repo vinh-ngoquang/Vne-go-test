@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
   CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 import { Layers, PieChart, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
@@ -20,6 +21,7 @@ interface CategoryDailyShareChartProps {
   categorySummaries: CategorySummary[];
   onSelectCategory: (cat: string) => void;
   selectedCategory: string;
+  onSelectDate?: (date: string) => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -39,6 +41,7 @@ export const CategoryDailyShareChart: React.FC<CategoryDailyShareChartProps> = (
   categorySummaries,
   onSelectCategory,
   selectedCategory,
+  onSelectDate,
 }) => {
   const [viewMode, setViewMode] = useState<'volume' | 'percent'>('volume');
 
@@ -115,7 +118,16 @@ export const CategoryDailyShareChart: React.FC<CategoryDailyShareChartProps> = (
       {/* Chart */}
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+          <AreaChart
+            data={chartData}
+            onClick={(state: any) => {
+              if (state && state.activePayload && state.activePayload.length > 0) {
+                const clickedDate = state.activePayload[0].payload.date;
+                if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+              }
+            }}
+            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
             <YAxis
@@ -158,6 +170,15 @@ export const CategoryDailyShareChart: React.FC<CategoryDailyShareChartProps> = (
               iconType="circle"
               wrapperStyle={{ fontSize: '11px' }}
             />
+            {selectedDate && (
+              <ReferenceLine
+                x={selectedDate.slice(5)}
+                stroke="#2563eb"
+                strokeDasharray="4 4"
+                strokeWidth={2}
+                strokeOpacity={0.8}
+              />
+            )}
             {categories.map((cat) => {
               const color = CATEGORY_COLORS[cat] || '#64748b';
               const isSelected = selectedCategory === cat;

@@ -213,6 +213,15 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                 fontSize: 11,
               }}
             />
+            {selectedDate && (
+              <ReferenceLine
+                x={selectedDate.slice(5)}
+                stroke="#2563eb"
+                strokeDasharray="4 4"
+                strokeWidth={2}
+                strokeOpacity={0.8}
+              />
+            )}
             <Area
               type="monotone"
               dataKey="value"
@@ -260,6 +269,15 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                 tick={{ fontSize: 10, fill: '#94a3b8' }}
               />
               <ReferenceLine y={0} stroke="#cbd5e1" />
+              {selectedDate && (
+                <ReferenceLine
+                  x={selectedDate.slice(5)}
+                  stroke="#2563eb"
+                  strokeDasharray="3 3"
+                  strokeWidth={1.5}
+                  strokeOpacity={0.7}
+                />
+              )}
               <Bar
                 dataKey="dodPct"
                 name="Tăng trưởng % DoD"

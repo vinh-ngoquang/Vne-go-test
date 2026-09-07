@@ -12,17 +12,20 @@ import {
   CartesianGrid,
   LineChart,
   Line,
+  ReferenceLine,
 } from 'recharts';
 import { Share2, Globe, ArrowDownRight, Compass } from 'lucide-react';
 
 interface TrafficChannelDynamicsChartProps {
   data: DailySummary[];
   selectedDate: string;
+  onSelectDate?: (date: string) => void;
 }
 
 export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartProps> = ({
   data,
   selectedDate,
+  onSelectDate,
 }) => {
   const [channelMode, setChannelMode] = useState<'macro' | 'external_detail' | 'internal_detail'>('macro');
 
@@ -108,7 +111,16 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           {channelMode === 'macro' ? (
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <BarChart
+              data={chartData}
+              onClick={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const clickedDate = state.activePayload[0].payload.date;
+                  if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+                }
+              }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
               <YAxis
@@ -143,11 +155,29 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                 }}
               />
               <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+              {selectedDate && (
+                <ReferenceLine
+                  x={selectedDate.slice(5)}
+                  stroke="#2563eb"
+                  strokeDasharray="4 4"
+                  strokeWidth={2}
+                  strokeOpacity={0.8}
+                />
+              )}
               <Bar dataKey="External" name="Nguồn Bên ngoài (E_* Social, Search, Direct)" fill="#10b981" stackId="a" />
               <Bar dataKey="Internal" name="Điều hướng Nội bộ (I_* Home, Detail, Folder)" fill="#6366f1" stackId="a" />
             </BarChart>
           ) : channelMode === 'external_detail' ? (
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <BarChart
+              data={chartData}
+              onClick={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const clickedDate = state.activePayload[0].payload.date;
+                  if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+                }
+              }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
               <YAxis
@@ -161,13 +191,31 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                 contentStyle={{ backgroundColor: '#0f172a', borderRadius: '8px', border: 'none', color: '#fff', fontSize: '12px' }}
               />
               <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+              {selectedDate && (
+                <ReferenceLine
+                  x={selectedDate.slice(5)}
+                  stroke="#2563eb"
+                  strokeDasharray="4 4"
+                  strokeWidth={2}
+                  strokeOpacity={0.8}
+                />
+              )}
               <Bar dataKey="E_Social" name="Social (Facebook, TikTok...)" fill="#3b82f6" stackId="e" />
               <Bar dataKey="E_Search" name="Search (Google Tìm kiếm)" fill="#f59e0b" stackId="e" />
               <Bar dataKey="E_Direct" name="Direct (Trực tiếp)" fill="#10b981" stackId="e" />
               <Bar dataKey="E_Referrer" name="Referrer (Báo khác/Web ngoài)" fill="#8b5cf6" stackId="e" />
             </BarChart>
           ) : (
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <BarChart
+              data={chartData}
+              onClick={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const clickedDate = state.activePayload[0].payload.date;
+                  if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+                }
+              }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
               <YAxis
@@ -181,6 +229,15 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                 contentStyle={{ backgroundColor: '#0f172a', borderRadius: '8px', border: 'none', color: '#fff', fontSize: '12px' }}
               />
               <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+              {selectedDate && (
+                <ReferenceLine
+                  x={selectedDate.slice(5)}
+                  stroke="#2563eb"
+                  strokeDasharray="4 4"
+                  strokeWidth={2}
+                  strokeOpacity={0.8}
+                />
+              )}
               <Bar dataKey="I_Home" name="I_Home (Từ Trang chủ)" fill="#6366f1" stackId="i" />
               <Bar dataKey="I_Detail" name="I_Detail (Từ Bài chi tiết)" fill="#06b6d4" stackId="i" />
               <Bar dataKey="I_Folder" name="I_Folder (Từ Trang mục)" fill="#ec4899" stackId="i" />

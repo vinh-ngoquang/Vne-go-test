@@ -224,18 +224,21 @@ export default function App() {
           categorySummaries={categorySummaries}
           onSelectCategory={setSelectedCategory}
           selectedCategory={selectedCategory}
+          onSelectDate={setSelectedDate}
         />
 
         {/* 5. Channel Dynamics (External vs Internal shifts) */}
         <TrafficChannelDynamicsChart
           data={dailySummaries}
           selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
         />
 
         {/* 6. Engagement & Reader Loyalty (PV/Session, PV/User, % VnE User) */}
         <EngagementQualityChart
           data={dailySummaries}
           selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
         />
 
         {/* 7. Diagnostic Matrix & Exportable Log Table */}

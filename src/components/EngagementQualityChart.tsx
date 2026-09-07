@@ -17,11 +17,13 @@ import { HeartHandshake, Award, Info } from 'lucide-react';
 interface EngagementQualityChartProps {
   data: DailySummary[];
   selectedDate: string;
+  onSelectDate?: (date: string) => void;
 }
 
 export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
   data,
   selectedDate,
+  onSelectDate,
 }) => {
   const chartData = data.map((d) => ({
     date: d.date,
@@ -75,7 +77,16 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+          <ComposedChart
+            data={chartData}
+            onClick={(state: any) => {
+              if (state && state.activePayload && state.activePayload.length > 0) {
+                const clickedDate = state.activePayload[0].payload.date;
+                if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+              }
+            }}
+            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
             {/* Left Axis: PV per Session / PV per User */}
@@ -128,6 +139,16 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
             />
             <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
             <ReferenceLine yAxisId="left" y={avgPvSession} stroke="#94a3b8" strokeDasharray="3 3" />
+            {selectedDate && (
+              <ReferenceLine
+                yAxisId="left"
+                x={selectedDate.slice(5)}
+                stroke="#2563eb"
+                strokeDasharray="4 4"
+                strokeWidth={2}
+                strokeOpacity={0.8}
+              />
+            )}
             <Bar
               yAxisId="left"
               dataKey="pvPerSession"
