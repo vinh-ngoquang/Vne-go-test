@@ -113,6 +113,32 @@ export default function App() {
     return null;
   }, [dailySummaries, currIdx]);
 
+  // Find same day last week (7 days prior)
+  const sameDayLastWeekSummary = useMemo(() => {
+    if (!selectedDate) return null;
+    const parts = selectedDate.split('-').map(Number);
+    if (parts.length !== 3) return null;
+    const [year, month, day] = parts;
+    const d = new Date(Date.UTC(year, month - 1, day));
+    d.setUTCDate(d.getUTCDate() - 7);
+    const targetStr = d.toISOString().slice(0, 10);
+    return dailySummaries.find((item) => item.date === targetStr) || null;
+  }, [dailySummaries, selectedDate]);
+
+  // Overall average across the entire period
+  const allTimeAvg = useMemo(() => {
+    if (dailySummaries.length === 0) {
+      return { pageview: 0, users: 0, session: 0, vne_user: 0 };
+    }
+    const count = dailySummaries.length;
+    return {
+      pageview: Math.round(dailySummaries.reduce((sum, d) => sum + d.pageview, 0) / count),
+      users: Math.round(dailySummaries.reduce((sum, d) => sum + d.users, 0) / count),
+      session: Math.round(dailySummaries.reduce((sum, d) => sum + d.session, 0) / count),
+      vne_user: Math.round(dailySummaries.reduce((sum, d) => sum + d.vne_user, 0) / count),
+    };
+  }, [dailySummaries]);
+
   // Category breakdown for selected date vs prev date
   const categorySummaries = useMemo(() => {
     const baseRecords = folderType === 'ALL' ? records : records.filter((r) => r.type_folder === folderType);
@@ -165,10 +191,12 @@ export default function App() {
           dodPageviewPct={currentDaySummary.dod_pageview_pct}
         />
 
-        {/* 2. Daily KPI Cards with Day-over-Day changes and benchmarks */}
+        {/* 2. Daily KPI Cards with DoD, WoW, and all-time avg comparisons */}
         <DailyKpiCards
           current={currentDaySummary}
           prev={prevDaySummary}
+          sameDayLastWeek={sameDayLastWeekSummary}
+          allTimeAvg={allTimeAvg}
           activeMetric={activeMetric}
           onSelectMetric={setActiveMetric}
         />
