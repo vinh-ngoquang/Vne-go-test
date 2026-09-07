@@ -1,0 +1,6 @@
+{
+  "name": "Daily Performance Tracking Dashboard",
+  "description": "Bảng theo dõi hiệu quả hoạt động hàng ngày (Daily Performance Follow-up Dashboard) theo subfolder, theo dõi tăng trưởng, biến động kênh và chất lượng tương tác.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
