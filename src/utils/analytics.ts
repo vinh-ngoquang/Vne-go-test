@@ -357,3 +357,21 @@ export function formatCompactNumber(num: number): string {
   }
   return num.toString();
 }
+
+/**
+ * Convert YYYY-MM-DD to Vietnamese day of week (e.g. "Thứ hai", "Thứ ba", "Chủ nhật")
+ */
+export function getDayOfWeekVi(dateStr: string, short: boolean = false): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3) return '';
+  const [year, month, day] = parts;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  const dayIndex = d.getUTCDay();
+  if (short) {
+    const shortDays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    return shortDays[dayIndex];
+  }
+  const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  return days[dayIndex];
+}

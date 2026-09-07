@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Filter, Upload, Layers, FolderTree, RefreshCw, BarChart3 } from 'lucide-react';
+import { getDayOfWeekVi } from '../utils/analytics';
 
 interface HeaderProps {
   dates: string[];
@@ -87,10 +88,15 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {dates.map((d) => (
                 <option key={d} value={d}>
-                  {d} {d === dates[dates.length - 1] ? '(Mới nhất)' : ''}
+                  {getDayOfWeekVi(d)} • {d} {d === dates[dates.length - 1] ? '(Mới nhất)' : ''}
                 </option>
               ))}
             </select>
+            {selectedDate && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs">
+                {getDayOfWeekVi(selectedDate)}
+              </span>
+            )}
           </div>
 
           {/* Folder Level Filter */}

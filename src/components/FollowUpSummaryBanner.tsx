@@ -1,6 +1,7 @@
 import React from 'react';
 import { DailyAlert } from '../types';
 import { AlertCircle, TrendingUp, TrendingDown, Info, CheckCircle2, ChevronRight } from 'lucide-react';
+import { getDayOfWeekVi } from '../utils/analytics';
 
 interface FollowUpSummaryBannerProps {
   alerts: DailyAlert[];
@@ -19,7 +20,7 @@ export const FollowUpSummaryBanner: React.FC<FollowUpSummaryBannerProps> = ({
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-            Mục tiêu Follow-up hàng ngày &bull; Ngày {selectedDate}
+            Mục tiêu Follow-up hàng ngày &bull; {getDayOfWeekVi(selectedDate)}, {selectedDate}
           </h2>
         </div>
         <div className="flex items-center gap-2 text-xs">

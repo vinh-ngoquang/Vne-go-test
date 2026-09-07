@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { DailySummary, CategorySummary } from '../types';
-import { formatNumber } from '../utils/analytics';
+import { formatNumber, getDayOfWeekVi } from '../utils/analytics';
 import { Table, ArrowUpDown, Download, Search, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface DailyDiagnosticTableProps {
@@ -237,8 +237,12 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                           : 'hover:bg-slate-50'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-mono font-medium text-slate-900">
-                        {row.date} {isSelected && <span className="ml-1 text-[10px] text-blue-600 font-bold">(Đang chọn)</span>}
+                      <td className="py-2.5 px-3 font-medium text-slate-900 whitespace-nowrap">
+                        <span className="text-slate-500 font-normal mr-1.5 inline-block min-w-[55px]">
+                          {getDayOfWeekVi(row.date)}
+                        </span>
+                        <span className="font-mono">{row.date}</span>
+                        {isSelected && <span className="ml-1.5 text-[10px] text-blue-600 font-bold bg-blue-100 px-1 py-0.2 rounded">(Đang chọn)</span>}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
                         {formatNumber(row.pageview)}

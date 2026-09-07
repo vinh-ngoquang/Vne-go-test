@@ -1,6 +1,6 @@
 import React from 'react';
 import { DailySummary } from '../types';
-import { formatNumber } from '../utils/analytics';
+import { formatNumber, getDayOfWeekVi } from '../utils/analytics';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -167,7 +167,7 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                 return (
                   <div className="bg-slate-900 text-white text-xs p-3 rounded-lg shadow-lg border border-slate-800 space-y-1">
                     <div className="font-bold text-slate-200 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                      <span>Ngày: {d.date}</span>
+                      <span>{getDayOfWeekVi(d.date)} &bull; {d.date}</span>
                       <span className="text-[10px] text-blue-400">Click để chọn ngày này</span>
                     </div>
                     <div className="flex items-center justify-between gap-4 pt-1">
@@ -254,12 +254,21 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
             Nhịp độ tăng trưởng ngày (Day-over-Day % change):
           </span>
           <span className="text-slate-400 italic">
-            Cột xanh: Tăng tốc &bull; Cột đỏ: Hạ nhiệt so với hôm trước
+            Cột xanh: Tăng tốc &bull; Cột đỏ: Hạ nhiệt so với hôm trước &bull; Rê chuột để xem chi tiết
           </span>
         </div>
-        <div className="h-24 w-full">
+        <div className="h-28 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <ComposedChart
+              data={chartData}
+              onClick={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const clickedDate = state.activePayload[0].payload.date;
+                  if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+                }
+              }}
+              margin={{ top: 8, right: 10, left: 10, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="displayDate" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <YAxis
@@ -268,22 +277,63 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                 tickFormatter={(v) => `${v}%`}
                 tick={{ fontSize: 10, fill: '#94a3b8' }}
               />
+              <Tooltip
+                cursor={{ fill: 'rgba(241, 245, 249, 0.65)' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length > 0) {
+                    const d = payload[0].payload;
+                    const hasDod = d.dodPct !== undefined;
+                    const isPos = (d.dodPct ?? 0) >= 0;
+                    return (
+                      <div className="bg-slate-900 text-white p-3 rounded-lg shadow-xl text-xs border border-slate-700 min-w-[210px] z-50">
+                        <div className="font-bold text-slate-200 border-b border-slate-800 pb-1.5 mb-2 flex items-center justify-between">
+                          <span>
+                            {getDayOfWeekVi(d.date)} &bull; {d.date}
+                          </span>
+                          {d.date === selectedDate && (
+                            <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-semibold">
+                              Đang chọn
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-slate-400">Giá trị {metricLabelMap[metric]}:</span>
+                          <span className="font-mono font-bold text-white">
+                            {metric === 'stickiness' ? `${d.value}%` : formatNumber(d.value)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center py-1 border-t border-slate-800/80">
+                          <span className="text-slate-400">Tốc độ tăng DoD:</span>
+                          <span className={`font-mono font-bold ${hasDod ? (isPos ? 'text-emerald-400' : 'text-rose-400') : 'text-slate-400'}`}>
+                            {hasDod ? `${isPos ? '+' : ''}${d.dodPct}%` : 'Mốc ngày đầu tiên'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2 italic text-center pt-1.5 border-t border-slate-800">
+                          Click vào cột để chuyển ngày theo dõi
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
               <ReferenceLine y={0} stroke="#cbd5e1" />
               {selectedDate && (
                 <ReferenceLine
                   x={selectedDate.slice(5)}
                   stroke="#2563eb"
                   strokeDasharray="3 3"
-                  strokeWidth={1.5}
-                  strokeOpacity={0.7}
+                  strokeWidth={2}
+                  strokeOpacity={0.8}
                 />
               )}
               <Bar
                 dataKey="dodPct"
                 name="Tăng trưởng % DoD"
                 shape={(props: any) => {
-                  const { x, y, width, height, value } = props;
+                  const { x, y, width, height, value, payload } = props;
                   const isPos = value >= 0;
+                  const isCurrent = payload?.date === selectedDate;
                   return (
                     <rect
                       x={x}
@@ -291,7 +341,10 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                       width={width}
                       height={height}
                       fill={isPos ? '#10b981' : '#f43f5e'}
+                      stroke={isCurrent ? '#1e40af' : 'none'}
+                      strokeWidth={isCurrent ? 2 : 0}
                       rx={2}
+                      style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
                     />
                   );
                 }}
@@ -310,7 +363,7 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
           </span>
         </div>
         <span className="font-medium text-blue-700 hidden sm:inline">
-          Ngày đang chọn: <strong>{selectedDate}</strong>
+          Ngày đang chọn: <strong>{getDayOfWeekVi(selectedDate)}, {selectedDate}</strong>
         </span>
       </div>
     </div>
