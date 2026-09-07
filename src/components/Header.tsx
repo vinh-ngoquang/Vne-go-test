@@ -106,17 +106,17 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Cấp thư mục:</span>
             </div>
             <div className="flex gap-1">
-              {['ALL', 'Folder Cấp 1', 'Folder Cấp 2'].map((type) => (
+              {['Folder Cấp 1', 'Folder Cấp 2'].map((type) => (
                 <button
                   key={type}
                   onClick={() => onChangeFolderType(type)}
-                  className={`px-2 py-1 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors cursor-pointer ${
                     folderType === type
-                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
                       : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
-                  {type === 'ALL' ? 'Tất cả' : type}
+                  {type}
                 </button>
               ))}
             </div>

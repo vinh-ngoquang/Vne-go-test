@@ -54,9 +54,16 @@ export default function App() {
     }
   }, [allDates, selectedDate]);
 
+  // Ensure folderType is strictly 'Folder Cấp 1' or 'Folder Cấp 2'
+  useEffect(() => {
+    if (folderType !== 'Folder Cấp 1' && folderType !== 'Folder Cấp 2') {
+      setFolderType('Folder Cấp 2');
+    }
+  }, [folderType]);
+
   // All unique categories in current folder scope
   const categories = useMemo(() => {
-    const scoped = folderType === 'ALL' ? records : records.filter((r) => r.type_folder === folderType);
+    const scoped = records.filter((r) => r.type_folder === folderType);
     const set = new Set(scoped.map((r) => r.Catename).filter(Boolean));
     return Array.from(set).sort();
   }, [records, folderType]);
@@ -147,7 +154,7 @@ export default function App() {
 
   // Category breakdown for selected date vs prev date
   const categorySummaries = useMemo(() => {
-    const baseRecords = folderType === 'ALL' ? records : records.filter((r) => r.type_folder === folderType);
+    const baseRecords = records.filter((r) => r.type_folder === folderType);
     return aggregateByCategory(baseRecords, selectedDate, prevDate);
   }, [records, folderType, selectedDate, prevDate]);
 
