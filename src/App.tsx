@@ -33,7 +33,7 @@ export default function App() {
 
   const [folderType, setFolderType] = useState<string>('Folder Cấp 2');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [activeMetric, setActiveMetric] = useState<'pageview' | 'users' | 'session' | 'vne_user'>('pageview');
+  const [activeMetric, setActiveMetric] = useState<'pageview' | 'users' | 'session' | 'vne_user' | 'stickiness'>('pageview');
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   // All unique dates sorted ascending
@@ -100,6 +100,8 @@ export default function App() {
       pv_per_session: 0,
       pv_per_user: 0,
       vne_user_ratio: 0,
+      mau: 0,
+      stickiness: 0,
     };
   }, [dailySummaries, currIdx, selectedDate]);
 
@@ -128,14 +130,18 @@ export default function App() {
   // Overall average across the entire period
   const allTimeAvg = useMemo(() => {
     if (dailySummaries.length === 0) {
-      return { pageview: 0, users: 0, session: 0, vne_user: 0 };
+      return { pageview: 0, users: 0, session: 0, vne_user: 0, stickiness: 0 };
     }
     const count = dailySummaries.length;
+    const avgUsers = dailySummaries.reduce((sum, d) => sum + d.users, 0) / count;
+    const avgMau = dailySummaries.reduce((sum, d) => sum + d.mau, 0) / count;
+    const avgStickiness = avgMau > 0 ? Number(((avgUsers / avgMau) * 100).toFixed(2)) : 0;
     return {
       pageview: Math.round(dailySummaries.reduce((sum, d) => sum + d.pageview, 0) / count),
-      users: Math.round(dailySummaries.reduce((sum, d) => sum + d.users, 0) / count),
+      users: Math.round(avgUsers),
       session: Math.round(dailySummaries.reduce((sum, d) => sum + d.session, 0) / count),
       vne_user: Math.round(dailySummaries.reduce((sum, d) => sum + d.vne_user, 0) / count),
+      stickiness: avgStickiness,
     };
   }, [dailySummaries]);
 

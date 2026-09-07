@@ -28,6 +28,8 @@ export interface DailySummary {
   users: number;
   session: number;
   vne_user: number;
+  mau: number;
+  stickiness: number; // (users / mau) * 100
   total_external: number;
   total_internal: number;
   E_Direct: number;
@@ -47,7 +49,9 @@ export interface DailySummary {
   dod_pageview_pct?: number; // % change vs previous day
   dod_users_pct?: number;
   dod_session_pct?: number;
+  dod_stickiness_pct?: number;
   moving_avg_pv?: number; // 3-day or 7-day rolling avg
+  moving_avg_stickiness?: number;
 }
 
 export interface CategorySummary {
@@ -56,6 +60,8 @@ export interface CategorySummary {
   users: number;
   session: number;
   vne_user: number;
+  mau: number;
+  stickiness: number; // (users / mau) * 100
   share_pct: number;
   total_external: number;
   total_internal: number;

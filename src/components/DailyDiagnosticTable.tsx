@@ -46,14 +46,14 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
   const handleExportCSV = () => {
     let csvContent = '';
     if (tab === 'by_date') {
-      csvContent = 'Ngày,Pageviews,Users,Sessions,VnE_Users,DoD_PV_Pct,External_Traffic,Internal_Traffic,PV_Per_Session\n';
+      csvContent = 'Ngày,Pageviews,Users,Sessions,VnE_Users,Stickiness_DAU_MAU_Pct,DoD_PV_Pct,External_Traffic,Internal_Traffic,PV_Per_Session\n';
       sortedDailyData.forEach((d) => {
-        csvContent += `${d.date},${d.pageview},${d.users},${d.session},${d.vne_user},${d.dod_pageview_pct ?? 0}%,${d.total_external},${d.total_internal},${d.pv_per_session}\n`;
+        csvContent += `${d.date},${d.pageview},${d.users},${d.session},${d.vne_user},${d.stickiness}%,${d.dod_pageview_pct ?? 0}%,${d.total_external},${d.total_internal},${d.pv_per_session}\n`;
       });
     } else {
-      csvContent = 'Chuyên_mục,Pageviews,Users,Sessions,DoD_PV_Pct,Thị_phần_Pct,External_Traffic,Internal_Traffic\n';
+      csvContent = 'Chuyên_mục,Pageviews,Users,Sessions,Stickiness_DAU_MAU_Pct,DoD_PV_Pct,Thị_phần_Pct,External_Traffic,Internal_Traffic\n';
       categoryData.forEach((c) => {
-        csvContent += `"${c.category}",${c.pageview},${c.users},${c.session},${c.dod_pageview_pct ?? 0}%,${c.share_pct}%,${c.total_external},${c.total_internal}\n`;
+        csvContent += `"${c.category}",${c.pageview},${c.users},${c.session},${c.stickiness}%,${c.dod_pageview_pct ?? 0}%,${c.share_pct}%,${c.total_external},${c.total_internal}\n`;
       });
     }
 
@@ -190,6 +190,15 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                     </div>
                   </th>
                   <th
+                    onClick={() => handleSort('stickiness')}
+                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition-colors text-right"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Stickiness (%)</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th
                     onClick={() => handleSort('session')}
                     className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition-colors text-right"
                   >
@@ -250,6 +259,9 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                       <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                         {formatNumber(row.users)}
                       </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-purple-700">
+                        {row.stickiness}%
+                      </td>
                       <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                         {formatNumber(row.session)}
                       </td>
@@ -291,6 +303,7 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                 <th className="py-3 px-3 text-right">Tăng trưởng DoD</th>
                 <th className="py-3 px-3 text-right">Thị phần %</th>
                 <th className="py-3 px-3 text-right">Users</th>
+                <th className="py-3 px-3 text-right">Stickiness (%)</th>
                 <th className="py-3 px-3 text-right">Sessions</th>
                 <th className="py-3 px-3 text-right">Nguồn Ngoài (E_*)</th>
                 <th className="py-3 px-3 text-right">Nội bộ (I_*)</th>
@@ -325,6 +338,9 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {formatNumber(cat.users)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-purple-700">
+                      {cat.stickiness}%
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {formatNumber(cat.session)}

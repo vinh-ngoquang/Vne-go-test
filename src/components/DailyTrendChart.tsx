@@ -20,8 +20,8 @@ interface DailyTrendChartProps {
   data: DailySummary[];
   selectedDate: string;
   onSelectDate: (date: string) => void;
-  metric: 'pageview' | 'users' | 'session' | 'vne_user';
-  onChangeMetric: (metric: 'pageview' | 'users' | 'session' | 'vne_user') => void;
+  metric: 'pageview' | 'users' | 'session' | 'vne_user' | 'stickiness';
+  onChangeMetric: (metric: 'pageview' | 'users' | 'session' | 'vne_user' | 'stickiness') => void;
 }
 
 export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
@@ -36,6 +36,7 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
     users: 'Số lượng độc giả (Users)',
     session: 'Số phiên đọc (Sessions)',
     vne_user: 'Độc giả có tài khoản (VnE User)',
+    stickiness: 'Độ gắn kết Stickiness (Users/MAU %)',
   };
 
   const metricColorMap = {
@@ -43,20 +44,39 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
     users: '#4f46e5',    // indigo
     session: '#059669',  // emerald
     vne_user: '#d97706', // amber
+    stickiness: '#8b5cf6', // purple
   };
 
   const primaryColor = metricColorMap[metric];
 
   // Calculate average for reference line
   const totalVal = data.reduce((sum, d) => sum + (d[metric] || 0), 0);
-  const avgVal = data.length > 0 ? Math.round(totalVal / data.length) : 0;
+  const avgVal = data.length > 0
+    ? metric === 'stickiness'
+      ? Number((totalVal / data.length).toFixed(2))
+      : Math.round(totalVal / data.length)
+    : 0;
 
   const chartData = data.map((d) => ({
     date: d.date,
     displayDate: d.date.slice(5), // MM-DD
     value: d[metric],
-    movingAvg: d.moving_avg_pv && metric === 'pageview' ? d.moving_avg_pv : undefined,
-    dodPct: metric === 'pageview' ? d.dod_pageview_pct : metric === 'users' ? d.dod_users_pct : d.dod_session_pct,
+    movingAvg:
+      metric === 'pageview'
+        ? d.moving_avg_pv
+        : metric === 'stickiness'
+        ? d.moving_avg_stickiness
+        : undefined,
+    dodPct:
+      metric === 'pageview'
+        ? d.dod_pageview_pct
+        : metric === 'users'
+        ? d.dod_users_pct
+        : metric === 'session'
+        ? d.dod_session_pct
+        : metric === 'stickiness'
+        ? d.dod_stickiness_pct
+        : undefined,
     isSelected: d.date === selectedDate,
   }));
 
@@ -77,18 +97,26 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
         </div>
 
         {/* Metric Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto">
-          {(['pageview', 'users', 'session', 'vne_user'] as const).map((m) => (
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto flex-wrap">
+          {(['pageview', 'users', 'session', 'vne_user', 'stickiness'] as const).map((m) => (
             <button
               key={m}
               onClick={() => onChangeMetric(m)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 metric === m
                   ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {m === 'pageview' ? 'Pageviews' : m === 'users' ? 'Users' : m === 'session' ? 'Sessions' : 'VnE Users'}
+              {m === 'pageview'
+                ? 'Pageviews'
+                : m === 'users'
+                ? 'Users'
+                : m === 'session'
+                ? 'Sessions'
+                : m === 'vne_user'
+                ? 'VnE Users'
+                : 'Stickiness (%)'}
             </button>
           ))}
         </div>
@@ -123,7 +151,13 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickFormatter={(val) => (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : `${Math.round(val / 1000)}k`)}
+              tickFormatter={(val) =>
+                metric === 'stickiness'
+                  ? `${val}%`
+                  : val >= 1000000
+                  ? `${(val / 1000000).toFixed(1)}M`
+                  : `${Math.round(val / 1000)}k`
+              }
               tick={{ fill: '#64748b', fontSize: 11 }}
             />
             <Tooltip
@@ -138,12 +172,16 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
                     </div>
                     <div className="flex items-center justify-between gap-4 pt-1">
                       <span className="text-slate-300">{metricLabelMap[metric]}:</span>
-                      <span className="font-mono font-bold text-white text-sm">{formatNumber(d.value)}</span>
+                      <span className="font-mono font-bold text-white text-sm">
+                        {metric === 'stickiness' ? `${d.value}%` : formatNumber(d.value)}
+                      </span>
                     </div>
                     {d.movingAvg && (
                       <div className="flex items-center justify-between gap-4 text-amber-300">
                         <span>ĐTB động 3 ngày:</span>
-                        <span className="font-mono">{formatNumber(d.movingAvg)}</span>
+                        <span className="font-mono">
+                          {metric === 'stickiness' ? `${d.movingAvg}%` : formatNumber(d.movingAvg)}
+                        </span>
                       </div>
                     )}
                     {d.dodPct !== undefined && (
@@ -169,7 +207,7 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
               stroke="#94a3b8"
               strokeDasharray="4 4"
               label={{
-                value: `Mức TB giai đoạn: ${formatNumber(avgVal)}`,
+                value: `Mức TB giai đoạn: ${metric === 'stickiness' ? `${avgVal}%` : formatNumber(avgVal)}`,
                 position: 'insideTopRight',
                 fill: '#64748b',
                 fontSize: 11,
@@ -184,7 +222,7 @@ export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({
               fillOpacity={1}
               fill="url(#metricGradient)"
             />
-            {metric === 'pageview' && (
+            {(metric === 'pageview' || metric === 'stickiness') && (
               <Line
                 type="monotone"
                 dataKey="movingAvg"

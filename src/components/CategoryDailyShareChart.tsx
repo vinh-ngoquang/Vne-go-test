@@ -228,7 +228,7 @@ export const CategoryDailyShareChart: React.FC<CategoryDailyShareChartProps> = (
 
                 <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
                   <span>Thị phần: {cat.share_pct}%</span>
-                  <span>{cat.users > 0 ? `${formatNumber(cat.users)} u` : ''}</span>
+                  <span className="font-semibold text-purple-700">Stickiness: {cat.stickiness}%</span>
                 </div>
               </div>
             );

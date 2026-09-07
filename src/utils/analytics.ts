@@ -28,6 +28,7 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
     users: number;
     session: number;
     vne_user: number;
+    mau: number;
     E_Direct: number;
     E_Referrer: number;
     E_Search: number;
@@ -47,6 +48,7 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
       users: 0,
       session: 0,
       vne_user: 0,
+      mau: 0,
       E_Direct: 0,
       E_Referrer: 0,
       E_Search: 0,
@@ -64,6 +66,7 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
     existing.users += r.users;
     existing.session += r.session;
     existing.vne_user += r.vne_user;
+    existing.mau += r.MAU;
     existing.E_Direct += r.E_Direct;
     existing.E_Referrer += r.E_Referrer;
     existing.E_Search += r.E_Search;
@@ -82,17 +85,19 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
   // Sort by date ascending
   const sortedDates = Array.from(map.keys()).sort();
 
-  const summaries: DailySummary[] = sortedDates.map((date, idx) => {
+  const summaries: DailySummary[] = sortedDates.map((date) => {
     const data = map.get(date)!;
     const total_external = data.E_Direct + data.E_Referrer + data.E_Search + data.E_Social;
     const total_internal = data.I_Detail + data.I_Folder + data.I_Home + data.I_Tag + data.I_Topic + data.I_24h + data.I_Other;
     const pv_per_session = data.session > 0 ? Number((data.pageview / data.session).toFixed(2)) : 0;
     const pv_per_user = data.users > 0 ? Number((data.pageview / data.users).toFixed(2)) : 0;
     const vne_user_ratio = data.users > 0 ? Number(((data.vne_user / data.users) * 100).toFixed(1)) : 0;
+    const stickiness = data.mau > 0 ? Number(((data.users / data.mau) * 100).toFixed(2)) : 0;
 
     return {
       date,
       ...data,
+      stickiness,
       total_external,
       total_internal,
       pv_per_session,
@@ -114,10 +119,14 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
       curr.dod_session_pct = prev.session > 0
         ? Number((((curr.session - prev.session) / prev.session) * 100).toFixed(1))
         : 0;
+      curr.dod_stickiness_pct = prev.stickiness > 0
+        ? Number((((curr.stickiness - prev.stickiness) / prev.stickiness) * 100).toFixed(1))
+        : 0;
     } else {
       curr.dod_pageview_pct = 0;
       curr.dod_users_pct = 0;
       curr.dod_session_pct = 0;
+      curr.dod_stickiness_pct = 0;
     }
 
     // 3-day rolling average for Pageviews to identify momentum
@@ -125,6 +134,8 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
     const windowSlice = summaries.slice(windowStart, idx + 1);
     const avg = windowSlice.reduce((sum, item) => sum + item.pageview, 0) / windowSlice.length;
     curr.moving_avg_pv = Math.round(avg);
+    const avgStickiness = windowSlice.reduce((sum, item) => sum + item.stickiness, 0) / windowSlice.length;
+    curr.moving_avg_stickiness = Number(avgStickiness.toFixed(2));
   });
 
   return summaries;
@@ -157,6 +168,7 @@ export function aggregateByCategory(
     users: number;
     session: number;
     vne_user: number;
+    mau: number;
     total_external: number;
     total_internal: number;
   }>();
@@ -170,6 +182,7 @@ export function aggregateByCategory(
       users: 0,
       session: 0,
       vne_user: 0,
+      mau: 0,
       total_external: 0,
       total_internal: 0,
     };
@@ -181,6 +194,7 @@ export function aggregateByCategory(
     existing.users += r.users;
     existing.session += r.session;
     existing.vne_user += r.vne_user;
+    existing.mau += r.MAU;
     existing.total_external += ext;
     existing.total_internal += internal;
 
@@ -199,9 +213,12 @@ export function aggregateByCategory(
       dod_pageview_pct = Number((((val.pageview - prevPv) / prevPv) * 100).toFixed(1));
     }
 
+    const stickiness = val.mau > 0 ? Number(((val.users / val.mau) * 100).toFixed(2)) : 0;
+
     results.push({
       category: cat,
       ...val,
+      stickiness,
       share_pct,
       dod_pageview_pct,
     });
