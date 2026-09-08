@@ -50,8 +50,14 @@ export interface DailySummary {
   dod_users_pct?: number;
   dod_session_pct?: number;
   dod_stickiness_pct?: number;
-  moving_avg_pv?: number; // 3-day or 7-day rolling avg
+  vs_median_pageview_pct?: number; // % comparison vs overall median
+  vs_median_users_pct?: number;
+  vs_median_session_pct?: number;
+  vs_median_stickiness_pct?: number;
+  moving_avg_pv?: number; // 3-day rolling median for PV
   moving_avg_stickiness?: number;
+  moving_median_pv?: number;
+  moving_median_stickiness?: number;
 }
 
 export interface CategorySummary {
@@ -66,6 +72,8 @@ export interface CategorySummary {
   total_external: number;
   total_internal: number;
   dod_pageview_pct?: number;
+  vs_median_pct?: number;
+  median_pageview?: number;
 }
 
 export interface DailyAlert {

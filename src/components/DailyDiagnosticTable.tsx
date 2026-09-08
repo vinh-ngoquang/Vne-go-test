@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DailySummary, CategorySummary } from '../types';
 import { formatNumber, getDayOfWeekVi } from '../utils/analytics';
-import { Table, ArrowUpDown, Download, Search, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Table, ArrowUpDown, Download, Search, CheckCircle, AlertTriangle, BarChart2 } from 'lucide-react';
 
 interface DailyDiagnosticTableProps {
   dailyData: DailySummary[];
@@ -46,14 +46,14 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
   const handleExportCSV = () => {
     let csvContent = '';
     if (tab === 'by_date') {
-      csvContent = 'Ngày,Pageviews,Users,Sessions,VnE_Users,Stickiness_DAU_MAU_Pct,DoD_PV_Pct,External_Traffic,Internal_Traffic,PV_Per_Session\n';
+      csvContent = 'Ngày,Thứ,Pageviews,Vs_Median_PV_Pct,DoD_PV_Pct,Users,Sessions,VnE_Users,Stickiness_DAU_MAU_Pct,External_Traffic,Internal_Traffic\n';
       sortedDailyData.forEach((d) => {
-        csvContent += `${d.date},${d.pageview},${d.users},${d.session},${d.vne_user},${d.stickiness}%,${d.dod_pageview_pct ?? 0}%,${d.total_external},${d.total_internal},${d.pv_per_session}\n`;
+        csvContent += `${d.date},${getDayOfWeekVi(d.date)},${d.pageview},${d.vs_median_pageview_pct ?? 0}%,${d.dod_pageview_pct ?? 0}%,${d.users},${d.session},${d.vne_user},${d.stickiness}%,${d.total_external},${d.total_internal}\n`;
       });
     } else {
-      csvContent = 'Chuyên_mục,Pageviews,Users,Sessions,Stickiness_DAU_MAU_Pct,DoD_PV_Pct,Thị_phần_Pct,External_Traffic,Internal_Traffic\n';
+      csvContent = 'Chuyên_mục,Pageviews,Trung_vị_PV,Vs_Median_Pct,DoD_PV_Pct,Thị_phần_Pct,Users,Stickiness_DAU_MAU_Pct,External_Traffic,Internal_Traffic\n';
       categoryData.forEach((c) => {
-        csvContent += `"${c.category}",${c.pageview},${c.users},${c.session},${c.stickiness}%,${c.dod_pageview_pct ?? 0}%,${c.share_pct}%,${c.total_external},${c.total_internal}\n`;
+        csvContent += `"${c.category}",${c.pageview},${c.median_pageview ?? 0},${c.vs_median_pct ?? 0}%,${c.dod_pageview_pct ?? 0}%,${c.share_pct}%,${c.users},${c.stickiness}%,${c.total_external},${c.total_internal}\n`;
       });
     }
 
@@ -86,7 +86,7 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
               Bảng Chẩn đoán &amp; Nhật ký Số liệu Hàng ngày (Diagnostic Log)
             </h2>
             <p className="text-xs text-slate-500">
-              So sánh chi tiết tốc độ tăng trưởng, cấu trúc nguồn và các cảnh báo bất thường
+              Đối chiếu chi tiết so với mốc Trung vị chuẩn chu kỳ và nhịp độ biến động từng ngày
             </p>
           </div>
         </div>
@@ -158,7 +158,7 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                     className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition-colors"
                   >
                     <div className="flex items-center gap-1">
-                      <span>Ngày</span>
+                      <span>Ngày (Thứ)</span>
                       <ArrowUpDown className="w-3 h-3" />
                     </div>
                   </th>
@@ -172,11 +172,21 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                     </div>
                   </th>
                   <th
+                    onClick={() => handleSort('vs_median_pageview_pct')}
+                    className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition-colors text-right"
+                  >
+                    <div className="flex items-center justify-end gap-1 text-amber-800">
+                      <BarChart2 className="w-3 h-3 text-amber-600" />
+                      <span>vs Trung vị kỳ</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                  <th
                     onClick={() => handleSort('dod_pageview_pct')}
                     className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition-colors text-right"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <span>Tăng trưởng DoD</span>
+                      <span>DoD (nhịp ngày)</span>
                       <ArrowUpDown className="w-3 h-3" />
                     </div>
                   </th>
@@ -218,14 +228,16 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                   </th>
                   <th className="py-3 px-3 text-right">Nguồn Ngoài (E_*)</th>
                   <th className="py-3 px-3 text-right">Nội bộ (I_*)</th>
-                  <th className="py-3 px-3 text-center">Trạng thái</th>
+                  <th className="py-3 px-3 text-center">Đánh giá chuẩn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sortedDailyData.map((row) => {
                   const isSelected = row.date === selectedDate;
-                  const isPos = (row.dod_pageview_pct ?? 0) >= 0;
-                  const isAnomaly = Math.abs(row.dod_pageview_pct ?? 0) >= 25;
+                  const vsMedPct = row.vs_median_pageview_pct ?? 0;
+                  const isPosMed = vsMedPct >= 0;
+                  const dodPct = row.dod_pageview_pct;
+                  const isPosDoD = (dodPct ?? 0) >= 0;
 
                   return (
                     <tr
@@ -247,17 +259,28 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
                         {formatNumber(row.pageview)}
                       </td>
+                      {/* vs Median Column */}
                       <td className="py-2.5 px-3 text-right">
-                        {row.dod_pageview_pct !== undefined ? (
+                        <span
+                          className={`font-mono font-bold inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
+                            isPosMed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {isPosMed ? `+${vsMedPct}%` : `${vsMedPct}%`}
+                        </span>
+                      </td>
+                      {/* DoD Column */}
+                      <td className="py-2.5 px-3 text-right">
+                        {dodPct !== undefined ? (
                           <span
-                            className={`font-mono font-bold inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
-                              isPos ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            className={`font-mono inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
+                              isPosDoD ? 'text-emerald-600' : 'text-rose-600'
                             }`}
                           >
-                            {isPos ? `+${row.dod_pageview_pct}%` : `${row.dod_pageview_pct}%`}
+                            {isPosDoD ? `+${dodPct}%` : `${dodPct}%`}
                           </span>
                         ) : (
-                          '-'
+                          <span className="text-slate-400 font-mono">-</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-slate-700">
@@ -279,13 +302,17 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                         {formatNumber(row.total_internal)}
                       </td>
                       <td className="py-2.5 px-3 text-center">
-                        {isAnomaly ? (
+                        {vsMedPct >= 10 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3 h-3 text-emerald-600" /> Vượt trung vị
+                          </span>
+                        ) : vsMedPct <= -12 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                            <AlertTriangle className="w-3 h-3" /> Biến động mạnh
+                            <AlertTriangle className="w-3 h-3 text-amber-600" /> Dưới trung vị
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
-                            <CheckCircle className="w-3 h-3 text-emerald-600" /> Bình thường
+                            Bám sát trung vị
                           </span>
                         )}
                       </td>
@@ -303,8 +330,10 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
             <thead>
               <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold">
                 <th className="py-3 px-3">Subfolder / Chuyên mục</th>
-                <th className="py-3 px-3 text-right">Pageview</th>
-                <th className="py-3 px-3 text-right">Tăng trưởng DoD</th>
+                <th className="py-3 px-3 text-right">Pageview Ngày</th>
+                <th className="py-3 px-3 text-right">Trung vị Ngày (Toàn kỳ)</th>
+                <th className="py-3 px-3 text-right text-amber-800">vs Trung vị (%)</th>
+                <th className="py-3 px-3 text-right">DoD (nhịp ngày)</th>
                 <th className="py-3 px-3 text-right">Thị phần %</th>
                 <th className="py-3 px-3 text-right">Users</th>
                 <th className="py-3 px-3 text-right">Stickiness (%)</th>
@@ -315,7 +344,9 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {categoryData.map((cat) => {
-                const isPos = (cat.dod_pageview_pct ?? 0) >= 0;
+                const vsMed = cat.vs_median_pct ?? 0;
+                const isPosMed = vsMed >= 0;
+                const isPosDoD = (cat.dod_pageview_pct ?? 0) >= 0;
                 return (
                   <tr key={cat.category} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-900">
@@ -324,17 +355,29 @@ export const DailyDiagnosticTable: React.FC<DailyDiagnosticTableProps> = ({
                     <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
                       {formatNumber(cat.pageview)}
                     </td>
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-500">
+                      {formatNumber(cat.median_pageview)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <span
+                        className={`font-mono font-bold inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
+                          isPosMed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {isPosMed ? `+${vsMed}%` : `${vsMed}%`}
+                      </span>
+                    </td>
                     <td className="py-2.5 px-3 text-right">
                       {cat.dod_pageview_pct !== undefined ? (
                         <span
-                          className={`font-mono font-bold inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
-                            isPos ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                          className={`font-mono inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
+                            isPosDoD ? 'text-emerald-600' : 'text-rose-600'
                           }`}
                         >
-                          {isPos ? `+${cat.dod_pageview_pct}%` : `${cat.dod_pageview_pct}%`}
+                          {isPosDoD ? `+${cat.dod_pageview_pct}%` : `${cat.dod_pageview_pct}%`}
                         </span>
                       ) : (
-                        '-'
+                        <span className="text-slate-400 font-mono">-</span>
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-slate-700">

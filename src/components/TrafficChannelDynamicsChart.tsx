@@ -64,7 +64,7 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
           <div className="flex items-center gap-2">
             <Share2 className="w-5 h-5 text-emerald-600" />
             <h2 className="text-base font-bold text-slate-900">
-              Theo dõi Động thái Nguồn Lưu lượng (External vs. Internal Dynamics)
+              Theo dõi Động thái Nguồn Pageview (External vs. Internal Dynamics)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">

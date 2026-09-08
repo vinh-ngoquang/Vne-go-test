@@ -6,6 +6,7 @@ import {
   aggregateByDate,
   aggregateByCategory,
   generateFollowUpAlerts,
+  calculateMedian,
 } from './utils/analytics';
 import { Header } from './components/Header';
 import { FollowUpSummaryBanner } from './components/FollowUpSummaryBanner';
@@ -134,21 +135,17 @@ export default function App() {
     return dailySummaries.find((item) => item.date === targetStr) || null;
   }, [dailySummaries, selectedDate]);
 
-  // Overall average across the entire period
-  const allTimeAvg = useMemo(() => {
+  // Overall median across the entire period (thay thế trung bình bằng trung vị)
+  const allTimeMedian = useMemo(() => {
     if (dailySummaries.length === 0) {
       return { pageview: 0, users: 0, session: 0, vne_user: 0, stickiness: 0 };
     }
-    const count = dailySummaries.length;
-    const avgUsers = dailySummaries.reduce((sum, d) => sum + d.users, 0) / count;
-    const avgMau = dailySummaries.reduce((sum, d) => sum + d.mau, 0) / count;
-    const avgStickiness = avgMau > 0 ? Number(((avgUsers / avgMau) * 100).toFixed(2)) : 0;
     return {
-      pageview: Math.round(dailySummaries.reduce((sum, d) => sum + d.pageview, 0) / count),
-      users: Math.round(avgUsers),
-      session: Math.round(dailySummaries.reduce((sum, d) => sum + d.session, 0) / count),
-      vne_user: Math.round(dailySummaries.reduce((sum, d) => sum + d.vne_user, 0) / count),
-      stickiness: avgStickiness,
+      pageview: Math.round(calculateMedian(dailySummaries.map((d) => d.pageview))),
+      users: Math.round(calculateMedian(dailySummaries.map((d) => d.users))),
+      session: Math.round(calculateMedian(dailySummaries.map((d) => d.session))),
+      vne_user: Math.round(calculateMedian(dailySummaries.map((d) => d.vne_user))),
+      stickiness: Number(calculateMedian(dailySummaries.map((d) => d.stickiness)).toFixed(2)),
     };
   }, [dailySummaries]);
 
@@ -202,19 +199,21 @@ export default function App() {
           alerts={alerts}
           selectedDate={selectedDate}
           dodPageviewPct={currentDaySummary.dod_pageview_pct}
+          vsMedianPageviewPct={currentDaySummary.vs_median_pageview_pct}
+          medianPv={allTimeMedian.pageview}
         />
 
-        {/* 2. Daily KPI Cards with DoD, WoW, and all-time avg comparisons */}
+        {/* 2. Daily KPI Cards with DoD, WoW, and all-time median comparisons */}
         <DailyKpiCards
           current={currentDaySummary}
           prev={prevDaySummary}
           sameDayLastWeek={sameDayLastWeekSummary}
-          allTimeAvg={allTimeAvg}
+          allTimeMedian={allTimeMedian}
           activeMetric={activeMetric}
           onSelectMetric={setActiveMetric}
         />
 
-        {/* 3. Main Trend & Momentum Chart (Rolling Average + DoD Growth Bars) */}
+        {/* 3. Main Trend & Momentum Chart (Rolling Median + DoD Growth Bars) */}
         <DailyTrendChart
           data={dailySummaries}
           selectedDate={selectedDate}
@@ -225,7 +224,7 @@ export default function App() {
 
         {/* 4. Subfolder Contribution & Share Shift Chart */}
         <CategoryDailyShareChart
-          records={folderType === 'ALL' ? records : records.filter((r) => r.type_folder === folderType)}
+          records={records.filter((r) => r.type_folder === folderType)}
           categories={categories}
           selectedDate={selectedDate}
           categorySummaries={categorySummaries}

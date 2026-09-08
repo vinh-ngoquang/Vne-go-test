@@ -7,7 +7,14 @@ interface DailyKpiCardsProps {
   current: DailySummary;
   prev: DailySummary | null;
   sameDayLastWeek: DailySummary | null;
-  allTimeAvg: {
+  allTimeMedian: {
+    pageview: number;
+    users: number;
+    session: number;
+    vne_user: number;
+    stickiness: number;
+  };
+  allTimeAvg?: {
     pageview: number;
     users: number;
     session: number;
@@ -22,10 +29,13 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
   current,
   prev,
   sameDayLastWeek,
+  allTimeMedian,
   allTimeAvg,
   activeMetric,
   onSelectMetric,
 }) => {
+  const medianSource = allTimeMedian || allTimeAvg || { pageview: 0, users: 0, session: 0, vne_user: 0, stickiness: 0 };
+
   const cards = [
     {
       id: 'pageview' as const,
@@ -34,19 +44,19 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
       rawVal: current.pageview,
       prevVal: prev?.pageview,
       lastWeekVal: sameDayLastWeek?.pageview,
-      avgVal: allTimeAvg.pageview,
+      medianVal: medianSource.pageview,
       dodPct: current.dod_pageview_pct,
       wowPct:
         sameDayLastWeek && sameDayLastWeek.pageview > 0
           ? Number((((current.pageview - sameDayLastWeek.pageview) / sameDayLastWeek.pageview) * 100).toFixed(1))
           : undefined,
-      vsAvgPct:
-        allTimeAvg.pageview > 0
-          ? Number((((current.pageview - allTimeAvg.pageview) / allTimeAvg.pageview) * 100).toFixed(1))
+      vsMedianPct:
+        medianSource.pageview > 0
+          ? Number((((current.pageview - medianSource.pageview) / medianSource.pageview) * 100).toFixed(1))
           : undefined,
       icon: Eye,
       isPercent: false,
-      followUpTip: 'Theo dõi để phát hiện nội dung hot & điểm rơi lưu lượng',
+      followUpTip: 'Theo dõi để phát hiện nội dung hot & điểm rơi Pageview',
     },
     {
       id: 'users' as const,
@@ -55,15 +65,15 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
       rawVal: current.users,
       prevVal: prev?.users,
       lastWeekVal: sameDayLastWeek?.users,
-      avgVal: allTimeAvg.users,
+      medianVal: medianSource.users,
       dodPct: current.dod_users_pct,
       wowPct:
         sameDayLastWeek && sameDayLastWeek.users > 0
           ? Number((((current.users - sameDayLastWeek.users) / sameDayLastWeek.users) * 100).toFixed(1))
           : undefined,
-      vsAvgPct:
-        allTimeAvg.users > 0
-          ? Number((((current.users - allTimeAvg.users) / allTimeAvg.users) * 100).toFixed(1))
+      vsMedianPct:
+        medianSource.users > 0
+          ? Number((((current.users - medianSource.users) / medianSource.users) * 100).toFixed(1))
           : undefined,
       icon: Users,
       isPercent: false,
@@ -76,15 +86,15 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
       rawVal: current.session,
       prevVal: prev?.session,
       lastWeekVal: sameDayLastWeek?.session,
-      avgVal: allTimeAvg.session,
+      medianVal: medianSource.session,
       dodPct: current.dod_session_pct,
       wowPct:
         sameDayLastWeek && sameDayLastWeek.session > 0
           ? Number((((current.session - sameDayLastWeek.session) / sameDayLastWeek.session) * 100).toFixed(1))
           : undefined,
-      vsAvgPct:
-        allTimeAvg.session > 0
-          ? Number((((current.session - allTimeAvg.session) / allTimeAvg.session) * 100).toFixed(1))
+      vsMedianPct:
+        medianSource.session > 0
+          ? Number((((current.session - medianSource.session) / medianSource.session) * 100).toFixed(1))
           : undefined,
       icon: MousePointerClick,
       isPercent: false,
@@ -97,7 +107,7 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
       rawVal: current.vne_user,
       prevVal: prev?.vne_user,
       lastWeekVal: sameDayLastWeek?.vne_user,
-      avgVal: allTimeAvg.vne_user,
+      medianVal: medianSource.vne_user,
       dodPct:
         prev && prev.vne_user > 0
           ? Number((((current.vne_user - prev.vne_user) / prev.vne_user) * 100).toFixed(1))
@@ -106,9 +116,9 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
         sameDayLastWeek && sameDayLastWeek.vne_user > 0
           ? Number((((current.vne_user - sameDayLastWeek.vne_user) / sameDayLastWeek.vne_user) * 100).toFixed(1))
           : undefined,
-      vsAvgPct:
-        allTimeAvg.vne_user > 0
-          ? Number((((current.vne_user - allTimeAvg.vne_user) / allTimeAvg.vne_user) * 100).toFixed(1))
+      vsMedianPct:
+        medianSource.vne_user > 0
+          ? Number((((current.vne_user - medianSource.vne_user) / medianSource.vne_user) * 100).toFixed(1))
           : undefined,
       icon: UserCheck,
       isPercent: false,
@@ -121,15 +131,15 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
       rawVal: current.stickiness,
       prevVal: prev?.stickiness,
       lastWeekVal: sameDayLastWeek?.stickiness,
-      avgVal: allTimeAvg.stickiness,
+      medianVal: medianSource.stickiness,
       dodPct: current.dod_stickiness_pct,
       wowPct:
         sameDayLastWeek && sameDayLastWeek.stickiness > 0
           ? Number((((current.stickiness - sameDayLastWeek.stickiness) / sameDayLastWeek.stickiness) * 100).toFixed(1))
           : undefined,
-      vsAvgPct:
-        allTimeAvg.stickiness > 0
-          ? Number((((current.stickiness - allTimeAvg.stickiness) / allTimeAvg.stickiness) * 100).toFixed(1))
+      vsMedianPct:
+        medianSource.stickiness > 0
+          ? Number((((current.stickiness - medianSource.stickiness) / medianSource.stickiness) * 100).toFixed(1))
           : undefined,
       icon: Magnet,
       isPercent: true,
@@ -138,41 +148,36 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
   ];
 
   const renderGrowthBadge = (pct: number | undefined, prefix = '') => {
-    if (pct === undefined) {
-      return (
-        <span className="text-[11px] text-slate-400 font-mono inline-flex items-center gap-0.5">
-          <Minus className="w-3 h-3" /> N/A
-        </span>
-      );
+    if (pct === undefined || isNaN(pct)) return <span className="text-slate-400 font-mono text-[11px]">-</span>;
+    const isZero = Math.abs(pct) < 0.05;
+    const isPositive = pct > 0;
+
+    let badgeClass = 'text-slate-600 bg-slate-100';
+    let Icon = Minus;
+
+    if (!isZero) {
+      if (isPositive) {
+        badgeClass = 'text-emerald-700 bg-emerald-50 border border-emerald-200';
+        Icon = TrendingUp;
+      } else {
+        badgeClass = 'text-rose-700 bg-rose-50 border border-rose-200';
+        Icon = TrendingDown;
+      }
     }
-    const isPos = pct > 0;
-    const isZero = pct === 0;
 
     return (
       <span
-        className={`inline-flex items-center gap-0.5 text-[11px] font-mono font-bold px-1.5 py-0.5 rounded ${
-          isPos
-            ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-            : isZero
-            ? 'text-slate-600 bg-slate-100 border border-slate-200'
-            : 'text-rose-700 bg-rose-50 border border-rose-200'
-        }`}
+        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold font-mono ${badgeClass}`}
       >
-        {isPos ? (
-          <TrendingUp className="w-3 h-3" />
-        ) : isZero ? (
-          <Minus className="w-3 h-3" />
-        ) : (
-          <TrendingDown className="w-3 h-3" />
-        )}
+        <Icon className="w-3 h-3" />
         {prefix}
-        {isPos ? `+${pct}%` : `${pct}%`}
+        {isPositive ? `+${pct}%` : `${pct}%`}
       </span>
     );
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mb-6">
       {cards.map((card) => {
         const isSelected = activeMetric === card.id;
         const Icon = card.icon;
@@ -181,22 +186,15 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
           <div
             key={card.id}
             onClick={() => onSelectMetric(card.id)}
-            className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none relative flex flex-col justify-between ${
+            className={`rounded-xl border p-4 transition-all duration-200 cursor-pointer text-left relative flex flex-col justify-between ${
               isSelected
-                ? 'bg-blue-50/40 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
-                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs'
+                ? 'bg-blue-50/40 border-blue-500 shadow-md ring-2 ring-blue-500/20'
+                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
             }`}
           >
-            {isSelected && (
-              <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-              </span>
-            )}
-
-            {/* Header */}
+            {/* Top row: Label & Icon */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[11px] font-semibold text-slate-500 tracking-tight leading-tight">
                   {card.title}
                 </span>
@@ -210,17 +208,30 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
               </div>
 
               {/* Main KPI Value */}
-              <div className="flex items-baseline justify-between gap-1 mt-0.5">
-                <span className="text-xl font-extrabold text-slate-900 tracking-tight font-mono">
+              <div className="mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900 tracking-tight font-mono">
                   {card.value}
                 </span>
-                {card.dodPct !== undefined && renderGrowthBadge(card.dodPct)}
               </div>
             </div>
 
             {/* Multi-horizon Growth Comparisons */}
             <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-1.5 text-[11px]">
-              {/* 1. So với cùng kỳ tuần trước (WoW) */}
+              {/* 1. So với Trung vị toàn chu kỳ (Mốc chuẩn loại trừ giảm cuối tuần) */}
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 flex items-center gap-1 font-semibold">
+                  <BarChart2 className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span>Trung vị kỳ:</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    ({card.isPercent ? `${card.medianVal}%` : formatCompactNumber(card.medianVal)})
+                  </span>
+                  {renderGrowthBadge(card.vsMedianPct)}
+                </div>
+              </div>
+
+              {/* 2. So với cùng kỳ tuần trước (WoW) */}
               <div className="flex items-center justify-between">
                 <span className="text-slate-600 flex items-center gap-1 font-medium">
                   <CalendarDays className="w-3 h-3 text-indigo-500 shrink-0" />
@@ -236,32 +247,23 @@ export const DailyKpiCards: React.FC<DailyKpiCardsProps> = ({
                 </div>
               </div>
 
-              {/* 2. So với trung bình toàn thời gian */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600 flex items-center gap-1 font-medium">
-                  <BarChart2 className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span>TB toàn kỳ:</span>
-                </span>
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    ({card.isPercent ? `${card.avgVal}%` : formatCompactNumber(card.avgVal)})
-                  </span>
-                  {renderGrowthBadge(card.vsAvgPct)}
-                </div>
-              </div>
-
-              {/* 3. So với ngày hôm trước (DoD) detail note */}
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-50">
+              {/* 3. So với ngày hôm trước (DoD - tham khảo nhịp ngày) */}
+              <div
+                className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100/60 hover:bg-slate-100/80 px-1.5 py-0.5 rounded transition-colors cursor-help"
+                title="Tăng trưởng so với ngày hôm trước (Day-over-Day). Lưu ý cuối tuần thường có nhịp giảm tự nhiên."
+              >
                 <span className="flex items-center gap-1">
                   <Clock className="w-2.5 h-2.5 text-slate-400" />
-                  <span>Hôm trước:</span>
+                  <span>DoD (nhịp ngày):</span>
                 </span>
                 <span className="font-mono font-medium text-slate-600">
-                  {card.prevVal !== undefined
-                    ? card.isPercent
-                      ? `${card.prevVal}%`
-                      : formatNumber(card.prevVal)
-                    : 'Chưa có'}
+                  {card.dodPct !== undefined ? (
+                    <span className={card.dodPct >= 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
+                      {card.dodPct > 0 ? `+${card.dodPct}%` : `${card.dodPct}%`}
+                    </span>
+                  ) : (
+                    'Mốc đầu'
+                  )}
                 </span>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Filter, Upload, Layers, FolderTree, RefreshCw, BarChart3 } from 'lucide-react';
+import { Calendar, Filter, Upload, Layers, FolderTree, RefreshCw, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getDayOfWeekVi } from '../utils/analytics';
 
 interface HeaderProps {
@@ -27,11 +27,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenImport,
   onResetData,
 }) => {
+  const currentDayName = getDayOfWeekVi(selectedDate);
+  const isWeekend = currentDayName === 'Thứ bảy' || currentDayName === 'Chủ nhật';
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
         {/* Top bar */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm">
               <BarChart3 className="w-5 h-5" />
@@ -46,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Theo dõi biến động hiệu quả hàng ngày, phân tích tăng trưởng &amp; nguồn lưu lượng
+                Theo dõi biến động hiệu quả hàng ngày &bull; Chuẩn hóa đánh giá qua mốc Trung vị (Median)
               </p>
             </div>
           </div>
@@ -59,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
               title="Cập nhật thêm dữ liệu ngày mới"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" />
-              <span>Nạp thêm dữ liệu CSV</span>
+              <span>Nạp thêm CSV</span>
             </button>
 
             <button
@@ -74,32 +77,40 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Filter Toolbar */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
-          {/* Daily Focus Selector */}
-          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 pl-1">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+        <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
+          {/* Box Ngày theo dõi - hiển thị rõ thông tin Thứ của ngày */}
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 pl-1">
+              <Calendar className="w-4 h-4 text-blue-600" />
               <span>Ngày theo dõi:</span>
             </div>
             <select
               value={selectedDate}
               onChange={(e) => onSelectDate(e.target.value)}
-              className="text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-md px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
+              className="text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
             >
               {dates.map((d) => (
                 <option key={d} value={d}>
-                  {getDayOfWeekVi(d)} • {d} {d === dates[dates.length - 1] ? '(Mới nhất)' : ''}
+                  {getDayOfWeekVi(d)} &mdash; {d} {d === dates[dates.length - 1] ? '(Mới nhất)' : ''}
                 </option>
               ))}
             </select>
             {selectedDate && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs">
-                {getDayOfWeekVi(selectedDate)}
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold border shadow-2xs ${
+                  isWeekend
+                    ? 'bg-amber-50 text-amber-800 border-amber-300'
+                    : 'bg-blue-50 text-blue-800 border-blue-200'
+                }`}
+                title={isWeekend ? 'Cuối tuần: Pageview thường có xu hướng giảm tự nhiên' : 'Ngày làm việc trong tuần'}
+              >
+                {currentDayName}
+                {isWeekend && <span className="ml-1 text-[10px] text-amber-600 font-normal">(Cuối tuần)</span>}
               </span>
             )}
           </div>
 
-          {/* Folder Level Filter */}
+          {/* Cấp Thư mục - Chỉ giữ lại Cấp 1 và Cấp 2 */}
           <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 pl-1">
               <FolderTree className="w-3.5 h-3.5 text-indigo-600" />
@@ -144,16 +155,17 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick Date Stepper */}
           <div className="ml-auto flex items-center gap-1 text-xs text-slate-500">
-            <span>Chuyển ngày:</span>
             <button
               disabled={dates.indexOf(selectedDate) <= 0}
               onClick={() => {
                 const idx = dates.indexOf(selectedDate);
                 if (idx > 0) onSelectDate(dates[idx - 1]);
               }}
-              className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded text-slate-700 font-medium cursor-pointer"
+              className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded text-slate-700 font-medium cursor-pointer transition-colors"
+              title="Lùi 1 ngày"
             >
-              ◀ Ngày trước
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Ngày trước</span>
             </button>
             <button
               disabled={dates.indexOf(selectedDate) >= dates.length - 1}
@@ -161,9 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
                 const idx = dates.indexOf(selectedDate);
                 if (idx < dates.length - 1) onSelectDate(dates[idx + 1]);
               }}
-              className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded text-slate-700 font-medium cursor-pointer"
+              className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 rounded text-slate-700 font-medium cursor-pointer transition-colors"
+              title="Tiến 1 ngày"
             >
-              Ngày sau ▶
+              <span>Ngày sau</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

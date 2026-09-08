@@ -1,40 +1,55 @@
 import React from 'react';
 import { DailyAlert } from '../types';
-import { AlertCircle, TrendingUp, TrendingDown, Info, CheckCircle2, ChevronRight } from 'lucide-react';
-import { getDayOfWeekVi } from '../utils/analytics';
+import { AlertCircle, TrendingUp, TrendingDown, Info, ChevronRight, BarChart2 } from 'lucide-react';
+import { getDayOfWeekVi, formatNumber } from '../utils/analytics';
 
 interface FollowUpSummaryBannerProps {
   alerts: DailyAlert[];
   selectedDate: string;
   dodPageviewPct?: number;
+  vsMedianPageviewPct?: number;
+  medianPv?: number;
 }
 
 export const FollowUpSummaryBanner: React.FC<FollowUpSummaryBannerProps> = ({
   alerts,
   selectedDate,
   dodPageviewPct = 0,
+  vsMedianPageviewPct = 0,
+  medianPv,
 }) => {
+  const isAboveMedian = vsMedianPageviewPct >= 0;
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-            Mục tiêu Follow-up hàng ngày &bull; {getDayOfWeekVi(selectedDate)}, {selectedDate}
+            Kết luận &amp; Cảnh báo Follow-up &bull; {getDayOfWeekVi(selectedDate)}, {selectedDate}
           </h2>
         </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-500">Biến động ngày (DoD):</span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold ${
-              dodPageviewPct > 0
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : dodPageviewPct < 0
-                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                : 'bg-slate-100 text-slate-700'
-            }`}
-          >
-            {dodPageviewPct > 0 ? `▲ +${dodPageviewPct}%` : `${dodPageviewPct}%`} Pageview
+
+        {/* Primary comparison: Vs Median instead of DoD */}
+        <div className="flex items-center gap-2.5 text-xs flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <BarChart2 className="w-4 h-4 text-amber-600" />
+            <span className="text-slate-600 font-medium">So với Trung vị chu kỳ:</span>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono ${
+                isAboveMedian
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}
+            >
+              {isAboveMedian ? `▲ +${vsMedianPageviewPct}%` : `▼ ${vsMedianPageviewPct}%`} PV
+            </span>
+          </div>
+
+          <span className="text-slate-300">|</span>
+
+          <span className="text-slate-500 text-[11px]">
+            DoD nhịp ngày: <strong className="font-mono">{dodPageviewPct > 0 ? `+${dodPageviewPct}%` : `${dodPageviewPct}%`}</strong>
           </span>
         </div>
       </div>

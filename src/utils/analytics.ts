@@ -1,6 +1,21 @@
 import { RawRecord, DailySummary, CategorySummary, DailyAlert } from '../types';
 
 /**
+ * Calculate the median value of a numerical array
+ */
+export function calculateMedian(numbers: number[]): number {
+  if (!numbers || numbers.length === 0) return 0;
+  const valid = numbers.filter((n) => typeof n === 'number' && !isNaN(n));
+  if (valid.length === 0) return 0;
+  const sorted = [...valid].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 !== 0) {
+    return sorted[mid];
+  }
+  return Number(((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2));
+}
+
+/**
  * Filter raw records by folder type and category
  */
 export function filterRecords(
@@ -106,8 +121,28 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
     };
   });
 
-  // Calculate Day-over-Day (DoD) changes and Moving Averages
+  // Calculate Medians across all dates in the period
+  const allPvMedian = calculateMedian(summaries.map((s) => s.pageview));
+  const allUsersMedian = calculateMedian(summaries.map((s) => s.users));
+  const allSessionMedian = calculateMedian(summaries.map((s) => s.session));
+  const allStickinessMedian = calculateMedian(summaries.map((s) => s.stickiness));
+
+  // Calculate Day-over-Day (DoD) changes, comparisons vs Median, and Rolling Medians
   summaries.forEach((curr, idx) => {
+    // Comparison vs overall cycle Median (Tránh ảnh hưởng nhịp giảm tự nhiên cuối tuần)
+    curr.vs_median_pageview_pct = allPvMedian > 0
+      ? Number((((curr.pageview - allPvMedian) / allPvMedian) * 100).toFixed(1))
+      : 0;
+    curr.vs_median_users_pct = allUsersMedian > 0
+      ? Number((((curr.users - allUsersMedian) / allUsersMedian) * 100).toFixed(1))
+      : 0;
+    curr.vs_median_session_pct = allSessionMedian > 0
+      ? Number((((curr.session - allSessionMedian) / allSessionMedian) * 100).toFixed(1))
+      : 0;
+    curr.vs_median_stickiness_pct = allStickinessMedian > 0
+      ? Number((((curr.stickiness - allStickinessMedian) / allStickinessMedian) * 100).toFixed(1))
+      : 0;
+
     if (idx > 0) {
       const prev = summaries[idx - 1];
       curr.dod_pageview_pct = prev.pageview > 0
@@ -129,13 +164,15 @@ export function aggregateByDate(records: RawRecord[]): DailySummary[] {
       curr.dod_stickiness_pct = 0;
     }
 
-    // 3-day rolling average for Pageviews to identify momentum
+    // 3-day rolling median (thay thế trung bình động bằng trung vị trượt để loại bỏ nhiễu ngoại lai)
     const windowStart = Math.max(0, idx - 2);
     const windowSlice = summaries.slice(windowStart, idx + 1);
-    const avg = windowSlice.reduce((sum, item) => sum + item.pageview, 0) / windowSlice.length;
-    curr.moving_avg_pv = Math.round(avg);
-    const avgStickiness = windowSlice.reduce((sum, item) => sum + item.stickiness, 0) / windowSlice.length;
-    curr.moving_avg_stickiness = Number(avgStickiness.toFixed(2));
+    const rollingMedianPv = Math.round(calculateMedian(windowSlice.map((item) => item.pageview)));
+    curr.moving_median_pv = rollingMedianPv;
+    curr.moving_avg_pv = rollingMedianPv; // maintain compatibility
+    const rollingMedianStickiness = Number(calculateMedian(windowSlice.map((item) => item.stickiness)).toFixed(2));
+    curr.moving_median_stickiness = rollingMedianStickiness;
+    curr.moving_avg_stickiness = rollingMedianStickiness;
   });
 
   return summaries;
@@ -149,16 +186,33 @@ export function aggregateByCategory(
   selectedDate?: string,
   previousDate?: string
 ): CategorySummary[] {
+  // Precalculate median daily pageview per category across all dates in records
+  const catDailyPvMap = new Map<string, Map<string, number>>();
+  records.forEach((r) => {
+    const cat = r.Catename || 'Khác';
+    if (!catDailyPvMap.has(cat)) {
+      catDailyPvMap.set(cat, new Map());
+    }
+    const dMap = catDailyPvMap.get(cat)!;
+    dMap.set(r.date_days, (dMap.get(r.date_days) || 0) + r.pageview);
+  });
+
+  const catMedianPvMap = new Map<string, number>();
+  catDailyPvMap.forEach((dMap, cat) => {
+    const vals = Array.from(dMap.values());
+    catMedianPvMap.set(cat, Math.round(calculateMedian(vals)));
+  });
+
   const currentRecords = selectedDate
-    ? records.filter(r => r.date_days === selectedDate)
+    ? records.filter((r) => r.date_days === selectedDate)
     : records;
 
   const prevRecords = previousDate
-    ? records.filter(r => r.date_days === previousDate)
+    ? records.filter((r) => r.date_days === previousDate)
     : [];
 
   const prevPvMap = new Map<string, number>();
-  prevRecords.forEach(r => {
+  prevRecords.forEach((r) => {
     const cat = r.Catename || 'Khác';
     prevPvMap.set(cat, (prevPvMap.get(cat) || 0) + r.pageview);
   });
@@ -175,7 +229,7 @@ export function aggregateByCategory(
 
   let totalAllPv = 0;
 
-  currentRecords.forEach(r => {
+  currentRecords.forEach((r) => {
     const cat = r.Catename || 'Khác';
     const existing = catMap.get(cat) || {
       pageview: 0,
@@ -214,6 +268,10 @@ export function aggregateByCategory(
     }
 
     const stickiness = val.mau > 0 ? Number(((val.users / val.mau) * 100).toFixed(2)) : 0;
+    const median_pageview = catMedianPvMap.get(cat) || val.pageview;
+    const vs_median_pct = median_pageview > 0
+      ? Number((((val.pageview - median_pageview) / median_pageview) * 100).toFixed(1))
+      : 0;
 
     results.push({
       category: cat,
@@ -221,6 +279,8 @@ export function aggregateByCategory(
       stickiness,
       share_pct,
       dod_pageview_pct,
+      median_pageview,
+      vs_median_pct,
     });
   });
 
@@ -230,6 +290,8 @@ export function aggregateByCategory(
 
 /**
  * Generate Actionable Daily Follow-up Alerts & Anomalies
+ * Evaluated primarily against the MEDIAN of the cycle rather than DoD,
+ * preventing distorted conclusions caused by natural weekend traffic drops.
  */
 export function generateFollowUpAlerts(
   dailySummaries: DailySummary[],
@@ -237,106 +299,108 @@ export function generateFollowUpAlerts(
   currentDate: string
 ): DailyAlert[] {
   const alerts: DailyAlert[] = [];
-  const currIdx = dailySummaries.findIndex(d => d.date === currentDate);
+  const currIdx = dailySummaries.findIndex((d) => d.date === currentDate);
   if (currIdx < 0) return alerts;
 
   const current = dailySummaries[currIdx];
-  const prev = currIdx > 0 ? dailySummaries[currIdx - 1] : null;
 
-  // 1. Overall Pageview Alert
-  if (prev && current.dod_pageview_pct !== undefined) {
-    if (current.dod_pageview_pct >= 20) {
-      alerts.push({
-        id: 'pv-surge',
-        type: 'positive',
-        date: currentDate,
-        title: 'Tăng trưởng Pageview đột biến',
-        detail: `Lượt xem trang tăng mạnh +${current.dod_pageview_pct}% so với ngày hôm trước (${formatNumber(current.pageview)} vs ${formatNumber(prev.pageview)}). Cần kiểm tra nội dung viral.`,
-        metric: 'Pageviews',
-        changePct: current.dod_pageview_pct,
-      });
-    } else if (current.dod_pageview_pct <= -20) {
-      alerts.push({
-        id: 'pv-drop',
-        type: 'negative',
-        date: currentDate,
-        title: 'Sụt giảm Pageview đáng chú ý',
-        detail: `Lượt xem trang giảm ${current.dod_pageview_pct}% so với ngày trước. Kiểm tra luồng đẩy tin từ Trang chủ hoặc nguồn Social.`,
-        metric: 'Pageviews',
-        changePct: current.dod_pageview_pct,
-      });
-    }
+  // Calculate Medians across all days
+  const medianPv = calculateMedian(dailySummaries.map((d) => d.pageview));
+  const medianSocial = calculateMedian(dailySummaries.map((d) => d.E_Social));
+  const medianHome = calculateMedian(dailySummaries.map((d) => d.I_Home));
+
+  const vsMedianPvPct = current.vs_median_pageview_pct ?? (
+    medianPv > 0 ? Number((((current.pageview - medianPv) / medianPv) * 100).toFixed(1)) : 0
+  );
+
+  // 1. Overall Pageview Alert based on comparison with MEDIAN (loại trừ sai lệch cuối tuần)
+  if (vsMedianPvPct >= 10) {
+    alerts.push({
+      id: 'pv-above-median',
+      type: 'positive',
+      date: currentDate,
+      title: `Pageview vượt mức Trung vị (+${vsMedianPvPct}%)`,
+      detail: `Lượt xem trang (${formatNumber(current.pageview)} PV) cao hơn +${vsMedianPvPct}% so với mốc Trung vị chu kỳ (${formatNumber(medianPv)} PV). Hiệu suất nội dung đạt phong độ rất tốt, không bị tác động bởi chu kỳ cuối tuần.`,
+      metric: 'Pageviews',
+      changePct: vsMedianPvPct,
+    });
+  } else if (vsMedianPvPct <= -12) {
+    alerts.push({
+      id: 'pv-below-median',
+      type: 'warning',
+      date: currentDate,
+      title: `Pageview dưới mức Trung vị (${vsMedianPvPct}%)`,
+      detail: `Lượt xem trang (${formatNumber(current.pageview)} PV) thấp hơn ${Math.abs(vsMedianPvPct)}% so với mốc Trung vị chu kỳ (${formatNumber(medianPv)} PV). Cần kiểm tra chất lượng các tuyến bài đinh và kênh phân phối.`,
+      metric: 'Pageviews',
+      changePct: vsMedianPvPct,
+    });
   }
 
-  // 2. Channel Traffic Shifts
-  if (prev) {
-    const extPct = current.pageview > 0 ? (current.total_external / current.pageview) * 100 : 0;
-    const prevExtPct = prev.pageview > 0 ? (prev.total_external / prev.pageview) * 100 : 0;
-
-    if (current.E_Social > prev.E_Social * 1.5 && current.E_Social > 5000) {
-      alerts.push({
-        id: 'social-surge',
-        type: 'positive',
-        date: currentDate,
-        title: 'Bùng nổ lượng đọc từ Mạng Xã Hội (E_Social)',
-        detail: `Nguồn Social đạt ${formatNumber(current.E_Social)} lượt (tăng ${(
-          ((current.E_Social - prev.E_Social) / prev.E_Social) * 100
-        ).toFixed(0)}%). Tiếp tục tối ưu caption và thumbnail trên fanpage.`,
-        metric: 'E_Social',
-        changePct: Number((((current.E_Social - prev.E_Social) / prev.E_Social) * 100).toFixed(1)),
-      });
-    }
-
-    if (current.I_Home < prev.I_Home * 0.7 && prev.I_Home > 50000) {
-      alerts.push({
-        id: 'home-drop',
-        type: 'warning',
-        date: currentDate,
-        title: 'Luồng điều hướng từ Trang Chủ (I_Home) giảm',
-        detail: `Lượng click từ Home giảm xuống ${formatNumber(current.I_Home)}. Kiểm tra vị trí hiển thị box subfolder trên trang chủ.`,
-        metric: 'I_Home',
-        changePct: Number((((current.I_Home - prev.I_Home) / prev.I_Home) * 100).toFixed(1)),
-      });
-    }
+  // 2. Channel Traffic Shifts (So sánh với Trung vị nguồn Pageview)
+  const socialVsMedPct = medianSocial > 0 ? Number((((current.E_Social - medianSocial) / medianSocial) * 100).toFixed(1)) : 0;
+  if (socialVsMedPct >= 25 && current.E_Social > 5000) {
+    alerts.push({
+      id: 'social-above-median',
+      type: 'positive',
+      date: currentDate,
+      title: `Nguồn Mạng Xã Hội (E_Social) bứt phá (+${socialVsMedPct}% vs Trung vị)`,
+      detail: `Social đạt ${formatNumber(current.E_Social)} lượt đọc (so với mốc trung vị ${formatNumber(medianSocial)}). Tiếp tục đẩy mạnh phân phối các tin viral trên fanpage.`,
+      metric: 'E_Social',
+      changePct: socialVsMedPct,
+    });
   }
 
-  // 3. Category specific alerts
-  categorySummaries.forEach(cat => {
-    if (cat.dod_pageview_pct && cat.dod_pageview_pct >= 30 && cat.pageview > 10000) {
+  const homeVsMedPct = medianHome > 0 ? Number((((current.I_Home - medianHome) / medianHome) * 100).toFixed(1)) : 0;
+  if (homeVsMedPct <= -15 && medianHome > 50000) {
+    alerts.push({
+      id: 'home-below-median',
+      type: 'warning',
+      date: currentDate,
+      title: `Pageview từ Trang Chủ (I_Home) dưới mức Trung vị (${homeVsMedPct}%)`,
+      detail: `Click từ Trang chủ đạt ${formatNumber(current.I_Home)} (thấp hơn mốc trung vị ${formatNumber(medianHome)}). Cần kiểm tra vị trí hiển thị box chuyên mục trên Home.`,
+      metric: 'I_Home',
+      changePct: homeVsMedPct,
+    });
+  }
+
+  // 3. Category specific alerts evaluated against Category MEDIAN
+  categorySummaries.forEach((cat) => {
+    const catVsMedPct = cat.vs_median_pct ?? 0;
+    if (catVsMedPct >= 20 && cat.pageview > 10000) {
       alerts.push({
         id: `cat-up-${cat.category}`,
         type: 'positive',
         date: currentDate,
         category: cat.category,
-        title: `Chuyên mục "${cat.category}" tăng tốc mạnh`,
-        detail: `Đạt ${formatNumber(cat.pageview)} PV, tăng +${cat.dod_pageview_pct}% DoD, chiếm ${cat.share_pct}% thị phần toàn trang.`,
+        title: `Chuyên mục "${cat.category}" vượt trội vs Trung vị (+${catVsMedPct}%)`,
+        detail: `Đạt ${formatNumber(cat.pageview)} PV (so với mức trung vị ${formatNumber(cat.median_pageview)} PV), chiếm ${cat.share_pct}% thị phần toàn trang.`,
         metric: cat.category,
-        changePct: cat.dod_pageview_pct,
+        changePct: catVsMedPct,
       });
-    } else if (cat.dod_pageview_pct && cat.dod_pageview_pct <= -25 && cat.pageview > 5000) {
+    } else if (catVsMedPct <= -20 && (cat.median_pageview ?? 0) > 5000) {
       alerts.push({
         id: `cat-down-${cat.category}`,
         type: 'warning',
         date: currentDate,
         category: cat.category,
-        title: `Chuyên mục "${cat.category}" hạ nhiệt`,
-        detail: `Giảm ${cat.dod_pageview_pct}% so với hôm qua. Cần theo dõi tiếp các tập/tin mới xuất bản trong ngày.`,
+        title: `Chuyên mục "${cat.category}" dưới mức Trung vị (${catVsMedPct}%)`,
+        detail: `Đạt ${formatNumber(cat.pageview)} PV, thấp hơn ${Math.abs(catVsMedPct)}% so với trung vị chuyên mục (${formatNumber(cat.median_pageview)} PV).`,
         metric: cat.category,
-        changePct: cat.dod_pageview_pct,
+        changePct: catVsMedPct,
       });
     }
   });
 
-  // Default informational alert if no drastic anomalies
+  // Default informational alert anchored on Median
   if (alerts.length === 0) {
     alerts.push({
-      id: 'stable-day',
+      id: 'stable-median-day',
       type: 'info',
       date: currentDate,
-      title: 'Chỉ số duy trì ổn định',
-      detail: `Các chỉ số lượt xem và người dùng dao động trong ngưỡng bình thường (DoD dưới 20%). Tỷ lệ bạn đọc VnE đạt ${current.vne_user_ratio}%.`,
-      metric: 'Nhịp độ chung',
-      changePct: current.dod_pageview_pct || 0,
+      title: 'Chỉ số bám sát mốc Trung vị chuẩn',
+      detail: `Lượt xem trang (${formatNumber(current.pageview)} PV) dao động quanh mốc Trung vị (${formatNumber(medianPv)} PV, chênh lệch ${vsMedianPvPct > 0 ? `+${vsMedianPvPct}%` : `${vsMedianPvPct}%`} vs Trung vị). Đánh giá qua Trung vị giúp duy trì cái nhìn khách quan, không bị đánh giá sai do nhịp giảm tự nhiên cuối tuần.`,
+      metric: 'Nhịp độ chuẩn',
+      changePct: vsMedianPvPct,
     });
   }
 

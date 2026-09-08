@@ -1,5 +1,6 @@
 import React from 'react';
 import { DailySummary } from '../types';
+import { calculateMedian, getDayOfWeekVi } from '../utils/analytics';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -12,7 +13,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { HeartHandshake, Award, Info } from 'lucide-react';
+import { HeartHandshake, Info } from 'lucide-react';
 
 interface EngagementQualityChartProps {
   data: DailySummary[];
@@ -35,16 +36,17 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
     isSelected: d.date === selectedDate,
   }));
 
-  const avgPvSession = data.length > 0
-    ? Number((data.reduce((acc, c) => acc + c.pv_per_session, 0) / data.length).toFixed(2))
+  // Calculate Medians instead of arithmetic means
+  const medianPvSession = data.length > 0
+    ? Number(calculateMedian(data.map((c) => c.pv_per_session)).toFixed(2))
     : 0;
 
-  const avgVneRatio = data.length > 0
-    ? Number((data.reduce((acc, c) => acc + c.vne_user_ratio, 0) / data.length).toFixed(1))
+  const medianVneRatio = data.length > 0
+    ? Number(calculateMedian(data.map((c) => c.vne_user_ratio)).toFixed(1))
     : 0;
 
-  const avgStickiness = data.length > 0
-    ? Number((data.reduce((acc, c) => acc + c.stickiness, 0) / data.length).toFixed(2))
+  const medianStickiness = data.length > 0
+    ? Number(calculateMedian(data.map((c) => c.stickiness)).toFixed(2))
     : 0;
 
   return (
@@ -58,19 +60,19 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Mục đích follow-up: Kiểm tra chất lượng tương tác thực chất — độ sâu phiên đọc, tỷ lệ bạn đọc có tài khoản và độ gắn kết Stickiness (DAU/MAU)
+            Mục đích follow-up: Kiểm tra chất lượng tương tác thực chất — độ sâu phiên đọc, tỷ lệ bạn đọc có tài khoản và độ gắn kết đối chiếu mốc Trung vị chuẩn
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs flex-wrap">
           <span className="px-2.5 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-md font-semibold">
-            TB Stickiness: <strong>{avgStickiness}%</strong>
+            Trung vị Stickiness: <strong>{medianStickiness}%</strong>
           </span>
           <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-md font-semibold">
-            TB Độ sâu: <strong>{avgPvSession}</strong> PV/phiên
+            Trung vị Độ sâu: <strong>{medianPvSession}</strong> PV/phiên
           </span>
           <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-semibold">
-            TB Tỷ lệ VnE User: <strong>{avgVneRatio}%</strong>
+            Trung vị VnE User: <strong>{medianVneRatio}%</strong>
           </span>
         </div>
       </div>
@@ -109,13 +111,16 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
               tickFormatter={(v) => `${v}%`}
             />
             <Tooltip
-              content={({ active, payload, label }) => {
+              content={({ active, payload }) => {
                 if (!active || !payload || !payload.length) return null;
                 const d = payload[0].payload;
                 return (
-                  <div className="bg-slate-900 text-white text-xs p-3 rounded-lg shadow-lg border border-slate-800 space-y-1">
-                    <div className="font-bold text-slate-300 pb-1 border-b border-slate-800">
-                      Ngày {label}
+                  <div className="bg-slate-900 text-white text-xs p-3 rounded-lg shadow-lg border border-slate-800 space-y-1.5 min-w-[220px]">
+                    <div className="font-bold text-slate-300 pb-1 border-b border-slate-800 flex items-center justify-between">
+                      <span>{getDayOfWeekVi(d.date)} &bull; {d.date}</span>
+                      {d.date === selectedDate && (
+                        <span className="text-[10px] bg-blue-600 px-1 rounded text-white font-semibold">Đang chọn</span>
+                      )}
                     </div>
                     <div className="flex justify-between gap-4 py-0.5 text-purple-300">
                       <span>Độ gắn kết Stickiness (Users/MAU):</span>
@@ -138,7 +143,19 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
               }}
             />
             <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
-            <ReferenceLine yAxisId="left" y={avgPvSession} stroke="#94a3b8" strokeDasharray="3 3" />
+            <ReferenceLine
+              yAxisId="left"
+              y={medianPvSession}
+              stroke="#d97706"
+              strokeDasharray="3 3"
+              label={{
+                value: `Trung vị độ sâu: ${medianPvSession}`,
+                position: 'insideTopLeft',
+                fill: '#b45309',
+                fontSize: 10,
+                fontWeight: 600,
+              }}
+            />
             {selectedDate && (
               <ReferenceLine
                 yAxisId="left"
@@ -179,22 +196,21 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
               yAxisId="right"
               type="monotone"
               dataKey="vneUserRatio"
-              name="Tỷ lệ Độc giả có tài khoản (% VnE User)"
-              stroke="#f59e0b"
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: '#f59e0b' }}
+              name="Tỷ lệ bạn đọc VnE (%)"
+              stroke="#d97706"
+              strokeWidth={2}
+              strokeDasharray="3 2"
+              dot={{ r: 2.5, fill: '#d97706' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Info className="w-4 h-4 text-blue-600 shrink-0" />
-          <span>
-            <strong>Chỉ dấu gắn kết &amp; giữ chân:</strong> Chỉ số <strong>Stickiness (%) = Users / MAU</strong> phản ánh tỷ lệ bạn đọc trong tháng ghé thăm vào ngày này. Khi Stickiness và PV/phiên cùng tăng, bạn đọc không chỉ quay lại thường xuyên hơn mà còn khám phá nội dung sâu hơn.
-          </span>
-        </div>
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+        <Info className="w-4 h-4 text-blue-600 shrink-0" />
+        <span>
+          <strong>Lưu ý chất lượng:</strong> Sử dụng các mốc Trung vị giúp loại trừ ngày có bài tin bùng nổ ảo (clickbait ngắn hạn) làm lệch trung bình, cho bức tranh chân thực về mức độ gắn kết bền vững của bạn đọc.
+        </span>
       </div>
     </div>
   );
