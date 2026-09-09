@@ -347,16 +347,15 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-base font-bold text-slate-900">
-              Theo dõi Cơ cấu &amp; Động lực tăng trưởng từng Subfolder theo Tuần
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+              Cơ cấu &amp; Động lực tăng trưởng từng Subfolder theo Tuần
             </h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-              Mốc {allWeeks.length} Tuần
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 font-mono">
+              {allWeeks.length} tuần
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Đối chiếu số liệu thực tế từng Subfolder so với mốc Trung vị chuẩn &bull; Theo dõi quy mô và mức độ đóng góp
+            Đối chiếu số liệu thực tế từng Subfolder so với mốc Trung vị chuẩn chu kỳ
           </p>
         </div>
 
@@ -365,22 +364,20 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
           {/* Toggle Button Hiện / Ẩn Biểu Đồ Xu Hướng */}
           <button
             onClick={() => setShowTrendChart(!showTrendChart)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer border ${
               showTrendChart
-                ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs ring-2 ring-indigo-200'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+                ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
             }`}
-            title="Bật hoặc tắt biểu đồ xu hướng nhiều tuần"
           >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{showTrendChart ? 'Ẩn Biểu Đồ Xu Hướng' : 'Hiện Biểu Đồ Xu Hướng'}</span>
+            {showTrendChart ? 'Ẩn Biểu đồ Xu hướng' : 'Hiện Biểu đồ Xu hướng'}
           </button>
 
           {/* Filter Scope Pills */}
-          <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+          <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium border border-slate-200">
             <button
               onClick={() => setFilterScope('all')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'all'
                   ? 'bg-white text-slate-900 font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -390,36 +387,33 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
             </button>
             <button
               onClick={() => setFilterScope('declining_only')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'declining_only'
-                  ? 'bg-rose-500 text-white font-bold shadow-2xs'
-                  : 'text-rose-700 hover:bg-rose-50'
+                  ? 'bg-white text-slate-900 font-bold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <AlertTriangle className="w-3 h-3" />
-              <span>Sụt giảm ({countDeclining})</span>
+              Sụt giảm ({countDeclining})
             </button>
             <button
               onClick={() => setFilterScope('growth_only')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'growth_only'
-                  ? 'bg-emerald-600 text-white font-bold shadow-2xs'
-                  : 'text-emerald-700 hover:bg-emerald-50'
+                  ? 'bg-white text-slate-900 font-bold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Sparkles className="w-3 h-3" />
-              <span>Tăng trưởng ({countGrowth})</span>
+              Tăng trưởng ({countGrowth})
             </button>
           </div>
 
           {/* Sort Selector */}
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg text-xs">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 text-[11px]">Xếp theo:</span>
+          <div className="flex items-center gap-1 bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs">
+            <span className="text-slate-400 text-[11px]">Xếp theo:</span>
             <select
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
-              className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
             >
               <option value="delta_asc">Giảm nhiều nhất vs Trung vị (Mặc định)</option>
               <option value="delta_desc">Tăng nhiều nhất vs Trung vị</option>
@@ -432,17 +426,16 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
         </div>
       </div>
 
-      {/* 2. Factual Summary Metric Highlights (Purely quantitative numbers, no subjective text) */}
+      {/* 2. Factual Summary Metric Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         {/* Card 1: Subfolder Giảm Nhiều Nhất */}
-        <div className="p-3.5 rounded-xl border bg-rose-50/60 border-rose-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-rose-800 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>Giảm Nhiều Nhất vs. Trung Vị</span>
+            <span className="font-semibold text-slate-800">
+              Giảm Nhiều Nhất vs. Trung Vị
             </span>
             {topDroppingSubfolder && topDroppingSubfolder.dropContributionPct > 0 && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-200 text-rose-900">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-rose-50 text-rose-700 border border-rose-200">
                 Chiếm {topDroppingSubfolder.dropContributionPct}% lượng giảm
               </span>
             )}
@@ -450,32 +443,31 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
           {topDroppingSubfolder ? (
             <div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-base font-black text-rose-900 font-mono">
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   {topDroppingSubfolder.name}
                 </span>
-                <span className="text-xs font-bold text-rose-700 font-mono">
+                <span className="text-xs font-bold text-rose-600 font-mono">
                   {formatNumber(topDroppingSubfolder.delta)} PV ({topDroppingSubfolder.pctChange}%)
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                <span>Tuần này: <strong className="font-mono">{formatNumber(topDroppingSubfolder.currentVal)} PV</strong></span>
-                <span>Trung vị: <strong className="font-mono">{formatNumber(topDroppingSubfolder.medianVal)} PV</strong></span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono text-slate-700">{formatNumber(topDroppingSubfolder.currentVal)}</strong></span>
+                <span>Trung vị: <strong className="font-mono text-slate-700">{formatNumber(topDroppingSubfolder.medianVal)}</strong></span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 mt-1">Không có subfolder nào giảm so với trung vị.</p>
+            <p className="text-xs text-slate-400 mt-1">Không có subfolder nào giảm so với trung vị.</p>
           )}
         </div>
 
         {/* Card 2: Subfolder Có Lượng Xem Lớn Nhất */}
-        <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-slate-800 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-slate-600 shrink-0" />
-              <span>Lượng Xem Lớn Nhất Tuần Này</span>
+            <span className="font-semibold text-slate-800">
+              Lượng Xem Lớn Nhất Tuần Này
             </span>
             {topVolumeSubfolder && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-slate-200/70 text-slate-700">
                 Thị phần {topVolumeSubfolder.currentShare}%
               </span>
             )}
@@ -483,56 +475,55 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
           {topVolumeSubfolder ? (
             <div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-base font-black text-slate-900 font-mono">
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   {topVolumeSubfolder.name}
                 </span>
                 <span className="text-xs font-bold text-slate-700 font-mono">
                   {formatNumber(topVolumeSubfolder.currentVal)} PV
                 </span>
-                <span className={`text-[11px] font-bold ${topVolumeSubfolder.delta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  ({topVolumeSubfolder.delta >= 0 ? '+' : ''}{formatNumber(topVolumeSubfolder.delta)} vs Trung vị)
+                <span className={`text-[11px] font-mono ${topVolumeSubfolder.delta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  ({topVolumeSubfolder.delta >= 0 ? '+' : ''}{formatNumber(topVolumeSubfolder.delta)})
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                <span>Thị phần tuần này: <strong className="font-mono">{topVolumeSubfolder.currentShare}%</strong></span>
-                <span>Thị phần trung vị: <strong className="font-mono">{topVolumeSubfolder.medianShare}%</strong></span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
+                <span>Thị phần tuần này: <strong className="font-mono text-slate-700">{topVolumeSubfolder.currentShare}%</strong></span>
+                <span>Thị phần trung vị: <strong className="font-mono text-slate-700">{topVolumeSubfolder.medianShare}%</strong></span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 mt-1">Chưa có dữ liệu subfolder.</p>
+            <p className="text-xs text-slate-400 mt-1">Chưa có dữ liệu subfolder.</p>
           )}
         </div>
 
         {/* Card 3: Subfolder Tăng Trưởng Tốt Nhất */}
-        <div className="p-3.5 rounded-xl border bg-emerald-50/60 border-emerald-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Tăng Trưởng Tốt Nhất vs. Trung Vị</span>
+            <span className="font-semibold text-slate-800">
+              Tăng Trưởng Tốt Nhất vs. Trung Vị
             </span>
             {topGrowthSubfolder && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-900">
-                +{topGrowthSubfolder.pctChange}% vs Trung vị
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                +{topGrowthSubfolder.pctChange}%
               </span>
             )}
           </div>
           {topGrowthSubfolder ? (
             <div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-base font-black text-emerald-900 font-mono">
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   {topGrowthSubfolder.name}
                 </span>
-                <span className="text-xs font-bold text-emerald-700 font-mono">
+                <span className="text-xs font-bold text-emerald-600 font-mono">
                   +{formatNumber(topGrowthSubfolder.delta)} PV
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                <span>Tuần này: <strong className="font-mono">{formatNumber(topGrowthSubfolder.currentVal)} PV</strong></span>
-                <span>Trung vị: <strong className="font-mono">{formatNumber(topGrowthSubfolder.medianVal)} PV</strong></span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono text-slate-700">{formatNumber(topGrowthSubfolder.currentVal)}</strong></span>
+                <span>Trung vị: <strong className="font-mono text-slate-700">{formatNumber(topGrowthSubfolder.medianVal)}</strong></span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Chưa có subfolder nào vượt mốc trung vị trong tuần hiện tại.
             </p>
           )}
@@ -541,69 +532,64 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
 
       {/* 3. Multi-Week Trend Chart (Triggered by Button) */}
       {showTrendChart && (
-        <div className="mb-5 p-4 rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/30 to-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-indigo-100">
+        <div className="mb-5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/60">
             <div className="flex items-center gap-2">
-              <LineChartIcon className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-xs font-bold text-slate-900">
-                Biểu đồ Xu hướng &amp; Cơ cấu Subfolder qua {allWeeks.length} Tuần quan sát
+              <h3 className="text-xs font-bold text-slate-800">
+                Xu hướng &amp; Cơ cấu Subfolder qua {allWeeks.length} Tuần quan sát
               </h3>
-              <span className="text-[11px] text-slate-500">
-                (Đường nét đứt đánh dấu tuần: <strong>{currentWeek.shortLabel}</strong>)
+              <span className="text-[11px] text-slate-400">
+                (Đường nét đứt: <strong className="text-slate-600">{currentWeek.shortLabel}</strong>)
               </span>
             </div>
 
             {/* Controls: Volume vs Percent & Area vs Line */}
             <div className="flex items-center gap-2 flex-wrap">
               {/* Metric View Toggle: Volume vs Percent */}
-              <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-semibold">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-medium">
                 <button
                   onClick={() => setMetricView('volume')}
                   className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
                     metricView === 'volume'
-                      ? 'bg-indigo-600 text-white font-bold'
+                      ? 'bg-slate-900 text-white font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Lượt xem (Volume)
+                  Lượt xem (PV)
                 </button>
                 <button
                   onClick={() => setMetricView('percent')}
                   className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
                     metricView === 'percent'
-                      ? 'bg-indigo-600 text-white font-bold'
+                      ? 'bg-slate-900 text-white font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Tỷ trọng % (Market Share)
+                  Tỷ trọng (%)
                 </button>
               </div>
 
               {/* Chart Style: Stacked Area vs Multi-Line */}
-              <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-semibold">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-medium">
                 <button
                   onClick={() => setChartStyle('area_stacked')}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded transition-all cursor-pointer ${
                     chartStyle === 'area_stacked'
-                      ? 'bg-slate-900 text-white font-bold'
+                      ? 'bg-slate-900 text-white font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  title="Biểu đồ diện tích xếp chồng"
                 >
-                  <BarChart3 className="w-3 h-3" />
-                  <span>Xếp chồng</span>
+                  Xếp chồng
                 </button>
                 <button
                   onClick={() => setChartStyle('line')}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded transition-all cursor-pointer ${
                     chartStyle === 'line'
-                      ? 'bg-slate-900 text-white font-bold'
+                      ? 'bg-slate-900 text-white font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  title="Biểu đồ đường riêng biệt"
                 >
-                  <TrendingUp className="w-3 h-3" />
-                  <span>Từng đường</span>
+                  Từng đường
                 </button>
               </div>
             </div>

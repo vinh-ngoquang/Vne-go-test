@@ -78,16 +78,15 @@ export const WeeklyFollowUpBanner: React.FC<WeeklyFollowUpBannerProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 mb-6">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-4 mb-6">
       {/* Top Header & Badges */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
             Kết luận &amp; Cảnh báo Follow-up &bull; {currentWeek.label}
           </h2>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-600">
-            {currentWeek.dayCount} ngày dữ liệu
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 font-medium text-slate-600 font-mono">
+            {currentWeek.dayCount} ngày
           </span>
         </div>
 
@@ -95,30 +94,25 @@ export const WeeklyFollowUpBanner: React.FC<WeeklyFollowUpBannerProps> = ({
         <div className="flex items-center gap-2.5 text-xs flex-wrap">
           {vsMedianPct !== undefined && (
             <div className="flex items-center gap-1.5">
-              <BarChart2 className="w-4 h-4 text-amber-600" />
-              <span className="text-slate-600 font-medium">vs Trung vị tuần:</span>
+              <span className="text-slate-500 text-[11px]">vs Trung vị tuần:</span>
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono ${
-                  isAboveMedian
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                className={`font-semibold font-mono text-[11px] ${
+                  isAboveMedian ? 'text-emerald-600' : 'text-rose-600'
                 }`}
               >
-                {isAboveMedian ? `▲ +${vsMedianPct}%` : `▼ ${vsMedianPct}%`} PV
+                {isAboveMedian ? `+${vsMedianPct}%` : `${vsMedianPct}%`} PV
               </span>
             </div>
           )}
 
           {currentWeek.wow_pageview_pct !== undefined && (
             <>
-              <span className="text-slate-300">|</span>
+              <span className="text-slate-200">|</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-600 font-medium">vs Tuần trước (WoW):</span>
+                <span className="text-slate-500 text-[11px]">vs Tuần trước:</span>
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono ${
-                    isUp
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  className={`font-semibold font-mono text-[11px] ${
+                    isUp ? 'text-emerald-600' : 'text-rose-600'
                   }`}
                 >
                   {isUp ? `+${currentWeek.wow_pageview_pct}%` : `${currentWeek.wow_pageview_pct}%`}
@@ -127,7 +121,7 @@ export const WeeklyFollowUpBanner: React.FC<WeeklyFollowUpBannerProps> = ({
             </>
           )}
 
-          <span className="text-slate-300">|</span>
+          <span className="text-slate-200">|</span>
 
           <span className="text-slate-500 text-[11px]">
             Trung vị ngày: <strong className="font-mono text-slate-800">{formatNumber(currentWeek.median_daily_pageview)} PV</strong>
@@ -138,47 +132,35 @@ export const WeeklyFollowUpBanner: React.FC<WeeklyFollowUpBannerProps> = ({
       {/* 3 Actionable Alert Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {alerts.map((alert) => {
-          let badgeStyle = 'bg-blue-50/80 border-blue-200 text-blue-900';
-          let Icon = Info;
-
-          if (alert.type === 'positive') {
-            badgeStyle = 'bg-emerald-50/80 border-emerald-200 text-emerald-900';
-            Icon = TrendingUp;
-          } else if (alert.type === 'negative') {
-            badgeStyle = 'bg-rose-50/80 border-rose-200 text-rose-900';
-            Icon = TrendingDown;
-          } else if (alert.type === 'warning') {
-            badgeStyle = 'bg-amber-50/80 border-amber-200 text-amber-900';
-            Icon = AlertCircle;
-          }
-
           return (
             <div
               key={alert.id}
-              className={`p-3.5 rounded-lg border flex flex-col justify-between ${badgeStyle} transition-all`}
+              className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span>{alert.title}</span>
-                  </div>
+                  <span className="font-semibold text-xs text-slate-900">
+                    {alert.title}
+                  </span>
                   {alert.changePct !== 0 && (
-                    <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/80 border border-current">
+                    <span
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                        alert.changePct > 0
+                          ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                          : 'text-rose-700 bg-rose-50 border border-rose-200'
+                      }`}
+                    >
                       {alert.changePct > 0 ? `+${alert.changePct}%` : `${alert.changePct}%`}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-700 leading-relaxed font-normal">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {alert.detail}
                 </p>
               </div>
 
-              <div className="mt-3 pt-2 border-t border-black/5 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+              <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                 <span>Chỉ số: {alert.metric}</span>
-                <span className="flex items-center text-slate-800 font-semibold gap-0.5">
-                  Theo dõi tiếp <ChevronRight className="w-3 h-3" />
-                </span>
               </div>
             </div>
           );

@@ -30,8 +30,8 @@ export const WeeklyKpiCards: React.FC<WeeklyKpiCardsProps> = ({
   const renderTrendBadge = (pct: number | undefined) => {
     if (pct === undefined) {
       return (
-        <span className="inline-flex items-center text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-          <Minus className="w-2.5 h-2.5 mr-0.5" /> Tuần đầu
+        <span className="text-[10px] font-medium text-slate-400 font-mono">
+          Tuần đầu
         </span>
       );
     }
@@ -39,22 +39,15 @@ export const WeeklyKpiCards: React.FC<WeeklyKpiCardsProps> = ({
     const isZero = pct === 0;
     return (
       <span
-        className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${
+        className={`text-[10px] font-bold font-mono ${
           isZero
-            ? 'bg-slate-100 text-slate-700'
+            ? 'text-slate-500'
             : isUp
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : 'bg-rose-50 text-rose-700 border border-rose-200'
+            ? 'text-emerald-700'
+            : 'text-rose-700'
         }`}
       >
-        {isUp ? (
-          <TrendingUp className="w-3 h-3 mr-0.5 text-emerald-600 shrink-0" />
-        ) : isZero ? (
-          <Minus className="w-3 h-3 mr-0.5 text-slate-500 shrink-0" />
-        ) : (
-          <TrendingDown className="w-3 h-3 mr-0.5 text-rose-600 shrink-0" />
-        )}
-        <span>{isUp ? `+${pct}%` : `${pct}%`}</span>
+        {isUp ? `+${pct}%` : `${pct}%`}
       </span>
     );
   };
@@ -150,7 +143,6 @@ export const WeeklyKpiCards: React.FC<WeeklyKpiCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mb-6">
       {cards.map((card) => {
-        const Icon = card.icon;
         const isSelected = activeMetric === card.id;
 
         return (
@@ -158,73 +150,58 @@ export const WeeklyKpiCards: React.FC<WeeklyKpiCardsProps> = ({
             key={card.id}
             id={`weekly-kpi-card-${card.id}`}
             onClick={() => onSelectMetric(card.id)}
-            className={`bg-white rounded-xl p-3.5 border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+            className={`bg-white rounded-xl p-3.5 border transition-all duration-150 cursor-pointer flex flex-col justify-between ${
               isSelected
-                ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/30 shadow-xs'
-                : 'border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300'
+                ? 'border-slate-900 ring-1 ring-slate-900 shadow-xs'
+                : 'border-slate-200 shadow-2xs hover:border-slate-300'
             }`}
           >
             <div>
-              {/* Row 1: Icon + Calculation Tag & Trend Badge */}
-              <div className="flex items-center justify-between gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-50 text-blue-600'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  <span
-                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                      card.calcType === 'TB tuần'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {card.calcType}
-                  </span>
-                </div>
-                <div>{renderTrendBadge(card.wowPct)}</div>
+              {/* Row 1: Title + Calc Type */}
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-bold text-slate-700 truncate">
+                  {card.title}
+                </h4>
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono shrink-0">
+                  {card.calcType}
+                </span>
               </div>
 
-              {/* Row 2: Title */}
-              <h4 className="text-xs font-bold text-slate-800 mt-2.5 leading-snug">
-                {card.title}
-              </h4>
-
-              {/* Row 3: Big Value & Unit */}
-              <div className="mt-1 flex items-baseline gap-1 flex-wrap">
-                <span className="text-xl sm:text-[22px] font-extrabold text-slate-900 tracking-tight leading-tight">
+              {/* Row 2: Big Value & Unit */}
+              <div className="mt-2 flex items-baseline gap-1 flex-wrap">
+                <span className="text-xl sm:text-[22px] font-extrabold text-slate-900 tracking-tight leading-tight font-mono">
                   {card.value}
                 </span>
                 {card.unit && card.unit !== '%' && (
-                  <span className="text-[11px] font-medium text-slate-500">
+                  <span className="text-[11px] font-medium text-slate-400">
                     {card.unit}
                   </span>
                 )}
               </div>
 
-              {/* Row 4: Comparisons (WoW & vs Median) */}
+              {/* Row 3: Comparisons (WoW & vs Median) */}
               <div className="mt-2.5 pt-2 border-t border-slate-100 space-y-1 text-xs">
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-500 text-[11px]">vs Tuần trước:</span>
-                  <span className="font-semibold font-mono text-slate-800 text-[11px]">
+                  <span className="text-slate-400 text-[11px]">vs Tuần trước:</span>
+                  <div className="flex items-center gap-1.5">
                     {card.prevVal !== undefined ? (
-                      card.id === 'stickiness' ? `${card.prevVal}%` : formatNumber(card.prevVal)
+                      <>
+                        <span className="font-semibold font-mono text-slate-700 text-[11px]">
+                          {card.id === 'stickiness' ? `${card.prevVal}%` : formatNumber(card.prevVal)}
+                        </span>
+                        {renderTrendBadge(card.wowPct)}
+                      </>
                     ) : (
-                      '—'
+                      <span className="text-slate-400 font-mono text-[11px]">—</span>
                     )}
-                  </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-500 text-[11px]">vs Trung vị:</span>
+                  <span className="text-slate-400 text-[11px]">vs Trung vị:</span>
                   <span className="font-bold font-mono text-[11px]">
                     {card.vsMedianPct !== undefined ? (
-                      <span className={card.vsMedianPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                      <span className={card.vsMedianPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
                         {card.vsMedianPct >= 0 ? `+${card.vsMedianPct}%` : `${card.vsMedianPct}%`}
                       </span>
                     ) : (
@@ -234,25 +211,11 @@ export const WeeklyKpiCards: React.FC<WeeklyKpiCardsProps> = ({
                 </div>
 
                 {/* Submetrics */}
-                <div className="flex items-center justify-between pt-1 border-t border-dashed border-slate-100 text-[11px] text-slate-500">
-                  <span className="text-slate-600">{card.sub1}</span>
-                  <span className="font-medium text-slate-700">{card.sub2}</span>
+                <div className="flex items-center justify-between pt-1 border-t border-dashed border-slate-100 text-[11px] text-slate-400">
+                  <span className="text-slate-500">{card.sub1}</span>
+                  <span className="font-medium text-slate-600">{card.sub2}</span>
                 </div>
               </div>
-            </div>
-
-            {/* Row 5: Selection state */}
-            <div className="mt-2.5 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
-              {isSelected ? (
-                <span className="text-blue-600 font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block animate-pulse" />
-                  Đang lọc biểu đồ
-                </span>
-              ) : (
-                <span className="text-slate-400 hover:text-slate-700">
-                  Bấm để lọc biểu đồ &rarr;
-                </span>
-              )}
             </div>
           </div>
         );

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Table, Calendar, ArrowUpDown, Layers, TrendingUp, TrendingDown, Minus, CheckCircle, Download } from 'lucide-react';
 import { WeeklySummary, WeeklyCategorySummary } from '../types';
 import { formatNumber, getDayOfWeekVi } from '../utils/analytics';
 
@@ -58,23 +57,16 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
   };
 
   const renderTrend = (pct: number | undefined) => {
-    if (pct === undefined) return <span className="text-slate-400 text-xs">—</span>;
+    if (pct === undefined) return <span className="text-slate-400 text-xs font-mono">—</span>;
     const isUp = pct > 0;
     const isZero = pct === 0;
 
     return (
       <span
-        className={`inline-flex items-center font-bold text-xs ${
-          isZero ? 'text-slate-600' : isUp ? 'text-emerald-600' : 'text-rose-600'
+        className={`font-mono font-medium text-xs ${
+          isZero ? 'text-slate-500' : isUp ? 'text-emerald-700' : 'text-rose-700'
         }`}
       >
-        {isUp ? (
-          <TrendingUp className="w-3 h-3 mr-0.5" />
-        ) : isZero ? (
-          <Minus className="w-3 h-3 mr-0.5" />
-        ) : (
-          <TrendingDown className="w-3 h-3 mr-0.5" />
-        )}
         {isUp ? `+${pct}%` : `${pct}%`}
       </span>
     );
@@ -83,16 +75,16 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
   const daysOfWeek = ['Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy', 'Chủ nhật'];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
       {/* Table Header & Tab Switcher */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              Bảng Tổng hợp & Phân tích Tuần
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              Bảng Tổng hợp &amp; Phân tích Tuần
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-              Chi tiết đối chuẩn
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium font-mono">
+              Đối chuẩn
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -101,46 +93,45 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
         </div>
 
         {/* Tab Buttons & Export */}
-        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
-          <div className="flex items-center bg-slate-100 p-1 rounded-lg">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button
               onClick={() => setActiveTab('weeks')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
                 activeTab === 'weeks'
-                  ? 'bg-white text-blue-700 shadow-2xs'
+                  ? 'bg-slate-900 text-white font-semibold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Tổng hợp các tuần ({allWeeks.length})
+              Tổng hợp tuần ({allWeeks.length})
             </button>
             <button
               onClick={() => setActiveTab('days')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
                 activeTab === 'days'
-                  ? 'bg-white text-blue-700 shadow-2xs'
+                  ? 'bg-slate-900 text-white font-semibold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              7 ngày trong {selectedWeek.shortLabel}
+              7 ngày ({selectedWeek.shortLabel})
             </button>
             <button
               onClick={() => setActiveTab('categories')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
                 activeTab === 'categories'
-                  ? 'bg-white text-blue-700 shadow-2xs'
+                  ? 'bg-slate-900 text-white font-semibold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Chuyên mục tuần ({categories.length})
+              Chuyên mục ({categories.length})
             </button>
           </div>
 
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
             title="Xuất bảng dữ liệu hiện tại ra tệp CSV"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
             <span>Xuất CSV</span>
           </button>
         </div>
@@ -152,20 +143,18 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Tuần theo dõi</th>
-                <th className="py-3 px-4">Khoảng ngày</th>
-                <th className="py-3 px-4 text-center">Số ngày</th>
-                <th className="py-3 px-4 text-right">Tổng Pageview</th>
-                <th className="py-3 px-4 text-right bg-blue-50/50 text-blue-900">
-                  Trung vị ngày
-                </th>
-                <th className="py-3 px-4 text-center">vs Tuần trước (WoW)</th>
-                <th className="py-3 px-4 text-center">vs Trung vị các tuần</th>
-                <th className="py-3 px-4 text-right">Tổng Độc giả</th>
-                <th className="py-3 px-4 text-right">Tổng Phiên</th>
-                <th className="py-3 px-4 text-right">Bạn đọc VnE</th>
-                <th className="py-3 px-4 text-center">Gắn kết</th>
-                <th className="py-3 px-4 text-center">Thao tác</th>
+                <th className="py-2.5 px-3">Tuần theo dõi</th>
+                <th className="py-2.5 px-3">Khoảng ngày</th>
+                <th className="py-2.5 px-3 text-center">Số ngày</th>
+                <th className="py-2.5 px-3 text-right">Tổng Pageview</th>
+                <th className="py-2.5 px-3 text-right">Trung vị ngày</th>
+                <th className="py-2.5 px-3 text-center">vs Tuần trước (WoW)</th>
+                <th className="py-2.5 px-3 text-center">vs Trung vị các tuần</th>
+                <th className="py-2.5 px-3 text-right">Tổng Độc giả</th>
+                <th className="py-2.5 px-3 text-right">Tổng Phiên</th>
+                <th className="py-2.5 px-3 text-right">Bạn đọc VnE</th>
+                <th className="py-2.5 px-3 text-center">Gắn kết</th>
+                <th className="py-2.5 px-3 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -176,61 +165,61 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
                   <tr
                     key={week.weekKey}
                     className={`hover:bg-slate-50/80 transition-colors ${
-                      isSelected ? 'bg-blue-50/40 font-medium' : ''
+                      isSelected ? 'bg-slate-50 font-medium' : ''
                     }`}
                   >
-                    <td className="py-3 px-4 font-bold text-slate-900">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900">
                       <div className="flex items-center gap-1.5">
                         {week.shortLabel}
                         {isSelected && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-600 text-white">
-                            Đang xem
+                          <span className="px-1 py-0.2 rounded text-[9px] font-medium bg-slate-900 text-white font-mono">
+                            Hiện tại
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                    <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
                       {week.startDate} &mdash; {week.endDate}
                     </td>
-                    <td className="py-3 px-4 text-center text-slate-600">
-                      <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[11px]">
-                        {week.dayCount} ngày
+                    <td className="py-2.5 px-3 text-center text-slate-600">
+                      <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[11px] font-mono">
+                        {week.dayCount}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900">
-                      {formatNumber(week.pageview)} PV
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-slate-900">
+                      {formatNumber(week.pageview)}
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-blue-900 bg-blue-50/30">
-                      {formatNumber(week.median_daily_pageview)} PV
+                    <td className="py-2.5 px-3 text-right font-semibold font-mono text-slate-800">
+                      {formatNumber(week.median_daily_pageview)}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {renderTrend(week.wow_pageview_pct)}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {renderTrend(week.vs_median_weeks_pageview_pct)}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {formatNumber(week.users)}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {formatNumber(week.session)}
                     </td>
-                    <td className="py-3 px-4 text-right text-purple-700 font-semibold">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {formatNumber(week.vne_user)} ({week.vne_user_ratio}%)
                     </td>
-                    <td className="py-3 px-4 text-center text-amber-700 font-semibold">
+                    <td className="py-2.5 px-3 text-center font-mono text-slate-700 font-medium">
                       {week.stickiness}%
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {!isSelected ? (
                         <button
                           onClick={() => onSelectWeek(week.weekKey)}
-                          className="px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 rounded transition-colors cursor-pointer"
+                          className="px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer border border-slate-200"
                         >
-                          Chọn tuần
+                          Chọn
                         </button>
                       ) : (
-                        <span className="text-[11px] text-slate-400 font-medium">Hiện tại</span>
+                        <span className="text-[11px] text-slate-400 font-medium font-mono">&bull;</span>
                       )}
                     </td>
                   </tr>
@@ -247,16 +236,16 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Thứ trong tuần</th>
-                <th className="py-3 px-4">Ngày ({selectedWeek.shortLabel})</th>
-                <th className="py-3 px-4 text-right">Pageview Tuần này</th>
-                <th className="py-3 px-4">Ngày ({prevWeek?.shortLabel || 'Tuần trước'})</th>
-                <th className="py-3 px-4 text-right">Pageview Tuần trước</th>
-                <th className="py-3 px-4 text-center">Tăng trưởng WoW</th>
-                <th className="py-3 px-4 text-center">So với Trung vị tuần</th>
-                <th className="py-3 px-4 text-right">Độc giả</th>
-                <th className="py-3 px-4 text-right">Phiên đọc</th>
-                <th className="py-3 px-4 text-center">Gắn kết</th>
+                <th className="py-2.5 px-3">Thứ trong tuần</th>
+                <th className="py-2.5 px-3">Ngày ({selectedWeek.shortLabel})</th>
+                <th className="py-2.5 px-3 text-right">Pageview Tuần này</th>
+                <th className="py-2.5 px-3">Ngày ({prevWeek?.shortLabel || 'Tuần trước'})</th>
+                <th className="py-2.5 px-3 text-right">Pageview Tuần trước</th>
+                <th className="py-2.5 px-3 text-center">Tăng trưởng WoW</th>
+                <th className="py-2.5 px-3 text-center">So với Trung vị tuần</th>
+                <th className="py-2.5 px-3 text-right">Độc giả</th>
+                <th className="py-2.5 px-3 text-right">Phiên đọc</th>
+                <th className="py-2.5 px-3 text-center">Gắn kết</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -286,41 +275,41 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
 
                 return (
                   <tr key={dayName} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-900">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900">
                       <div className="flex items-center gap-1.5">
                         <span>{dayName}</span>
                         {isWeekend && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
                             Cuối tuần
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                    <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
                       {currDay ? currDay.date : '—'}
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-blue-900">
-                      {currDay ? `${formatNumber(currPv)} PV` : '—'}
+                    <td className="py-2.5 px-3 text-right font-bold font-mono text-slate-900">
+                      {currDay ? formatNumber(currPv) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                    <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
                       {prevDay ? prevDay.date : '—'}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-600">
-                      {prevDay ? `${formatNumber(prevPv)} PV` : '—'}
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-600">
+                      {prevDay ? formatNumber(prevPv) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {renderTrend(wowPct)}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {renderTrend(vsMedianPct)}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {currDay ? formatNumber(currDay.users) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                       {currDay ? formatNumber(currDay.session) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center text-amber-700 font-semibold">
+                    <td className="py-2.5 px-3 text-center font-mono text-slate-700 font-medium">
                       {currDay ? `${currDay.stickiness}%` : '—'}
                     </td>
                   </tr>
@@ -337,49 +326,47 @@ export const WeeklyDiagnosticTable: React.FC<WeeklyDiagnosticTableProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Chuyên mục</th>
-                <th className="py-3 px-4 text-right">Tổng Pageview Tuần</th>
-                <th className="py-3 px-4 text-right">Pageview Tuần trước</th>
-                <th className="py-3 px-4 text-center">Tăng trưởng WoW</th>
-                <th className="py-3 px-4 text-center">Tỷ trọng (% Share)</th>
-                <th className="py-3 px-4 text-right">Trung vị ngày</th>
-                <th className="py-3 px-4 text-right">Độc giả tuần</th>
-                <th className="py-3 px-4 text-right">Phiên đọc tuần</th>
-                <th className="py-3 px-4 text-right">Ngoại vi (External)</th>
-                <th className="py-3 px-4 text-right">Nội bộ (Internal)</th>
+                <th className="py-2.5 px-3">Chuyên mục</th>
+                <th className="py-2.5 px-3 text-right">Tổng Pageview</th>
+                <th className="py-2.5 px-3 text-right">Tuần trước</th>
+                <th className="py-2.5 px-3 text-center">WoW</th>
+                <th className="py-2.5 px-3 text-center">Tỷ trọng</th>
+                <th className="py-2.5 px-3 text-right">Trung vị ngày</th>
+                <th className="py-2.5 px-3 text-right">Độc giả</th>
+                <th className="py-2.5 px-3 text-right">Phiên đọc</th>
+                <th className="py-2.5 px-3 text-right">Ngoại vi</th>
+                <th className="py-2.5 px-3 text-right">Nội bộ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {categories.map((cat) => (
                 <tr key={cat.category} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-4 font-bold text-slate-900">{cat.category}</td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-900">
-                    {formatNumber(cat.pageview)} PV
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">{cat.category}</td>
+                  <td className="py-2.5 px-3 text-right font-bold font-mono text-slate-900">
+                    {formatNumber(cat.pageview)}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-500">
-                    {cat.prev_pageview !== undefined ? `${formatNumber(cat.prev_pageview)} PV` : '—'}
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-500">
+                    {cat.prev_pageview !== undefined ? formatNumber(cat.prev_pageview) : '—'}
                   </td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-2.5 px-3 text-center">
                     {renderTrend(cat.wow_pageview_pct)}
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded-full">
-                      {cat.share_pct}%
-                    </span>
+                  <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-700">
+                    {cat.share_pct}%
                   </td>
-                  <td className="py-3 px-4 text-right text-blue-800 font-semibold">
-                    {formatNumber(cat.median_daily_pageview)} PV/ngày
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-700">
+                    {formatNumber(cat.median_daily_pageview)}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-700">
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                     {formatNumber(cat.users)}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-700">
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                     {formatNumber(cat.session)}
                   </td>
-                  <td className="py-3 px-4 text-right text-sky-700">
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                     {formatNumber(cat.total_external)}
                   </td>
-                  <td className="py-3 px-4 text-right text-emerald-700">
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-700">
                     {formatNumber(cat.total_internal)}
                   </td>
                 </tr>

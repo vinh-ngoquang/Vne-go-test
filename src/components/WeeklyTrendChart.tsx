@@ -115,26 +115,23 @@ export const WeeklyTrendChart: React.FC<WeeklyTrendChartProps> = ({
       {/* Chart Header with Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
         <div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-bold text-slate-900">
-              Biểu đồ Xu hướng &amp; Đối chuẩn Trung vị (Median Baseline theo Tuần)
-            </h2>
-          </div>
+          <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+            Xu hướng &amp; Đối chuẩn Trung vị theo Tuần
+          </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Mục đích follow-up: Đánh giá hiệu suất tuần theo trục thời gian các tuần, đối chiếu trực tiếp mốc Trung vị chuẩn chu kỳ
+            Đánh giá hiệu suất tuần theo chuỗi thời gian, đối chiếu trực tiếp mốc Trung vị chuẩn chu kỳ
           </p>
         </div>
 
         {/* Metric Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg self-start md:self-auto flex-wrap">
+        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg self-start md:self-auto flex-wrap border border-slate-200">
           {(['pageview', 'users', 'session', 'vne_user', 'stickiness'] as const).map((m) => (
             <button
               key={m}
               onClick={() => onChangeMetric(m)}
               className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeMetric === m
-                  ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                  ? 'bg-slate-900 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -145,8 +142,8 @@ export const WeeklyTrendChart: React.FC<WeeklyTrendChartProps> = ({
                 : m === 'session'
                 ? 'Sessions'
                 : m === 'vne_user'
-                ? 'VnE Users (TB)'
-                : 'Stickiness (%)'}
+                ? 'VnE Users'
+                : 'Stickiness'}
             </button>
           ))}
         </div>

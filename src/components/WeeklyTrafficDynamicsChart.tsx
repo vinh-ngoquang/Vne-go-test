@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Share2,
-  TrendingDown,
-  TrendingUp,
-  ArrowDownRight,
-  ArrowUpRight,
-  AlertTriangle,
-  Sparkles,
-  ArrowUpDown,
-  Layers,
-  LineChart as LineChartIcon,
-} from 'lucide-react';
-import {
   ResponsiveContainer,
   LineChart,
   Line,
@@ -344,16 +332,15 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">
               Động thái &amp; Nguồn Sụt giảm Pageview theo Tuần
             </h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-              Mốc {allWeeks.length} Tuần
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 font-mono">
+              {allWeeks.length} tuần
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Bóc tách từng nguồn lưu lượng so với mốc Trung vị chuẩn &bull; Theo dõi độ lệch và mức độ đóng góp
+            Bóc tách từng nguồn lưu lượng so với mốc Trung vị chuẩn chu kỳ
           </p>
         </div>
 
@@ -362,22 +349,20 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           {/* Toggle Button Hiện / Ẩn Biểu Đồ Xu Hướng */}
           <button
             onClick={() => setShowTrendChart(!showTrendChart)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer border ${
               showTrendChart
-                ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs ring-2 ring-indigo-200'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+                ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
             }`}
-            title="Bật hoặc tắt biểu đồ xu hướng nhiều tuần"
           >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{showTrendChart ? 'Ẩn Biểu Đồ Xu Hướng' : 'Hiện Biểu Đồ Xu Hướng'}</span>
+            {showTrendChart ? 'Ẩn Biểu đồ Xu hướng' : 'Hiện Biểu đồ Xu hướng'}
           </button>
 
           {/* Filter Scope Pills */}
-          <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+          <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium border border-slate-200">
             <button
               onClick={() => setFilterScope('all')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'all'
                   ? 'bg-white text-slate-900 font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -387,20 +372,19 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
             </button>
             <button
               onClick={() => setFilterScope('declining_only')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'declining_only'
-                  ? 'bg-rose-500 text-white font-bold shadow-2xs'
-                  : 'text-rose-700 hover:bg-rose-50'
+                  ? 'bg-white text-slate-900 font-bold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <AlertTriangle className="w-3 h-3" />
-              <span>Sụt giảm ({countDeclining})</span>
+              Sụt giảm ({countDeclining})
             </button>
             <button
               onClick={() => setFilterScope('internal_only')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'internal_only'
-                  ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                  ? 'bg-white text-slate-900 font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -408,9 +392,9 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
             </button>
             <button
               onClick={() => setFilterScope('external_only')}
-              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 filterScope === 'external_only'
-                  ? 'bg-emerald-600 text-white font-bold shadow-2xs'
+                  ? 'bg-white text-slate-900 font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -419,13 +403,12 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           </div>
 
           {/* Sort Selector */}
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg text-xs">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 text-[11px]">Xếp theo:</span>
+          <div className="flex items-center gap-1 bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs">
+            <span className="text-slate-400 text-[11px]">Xếp theo:</span>
             <select
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
-              className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer"
             >
               <option value="delta_asc">Giảm sâu nhất vs Trung vị (Mặc định)</option>
               <option value="pct_asc">% Lệch giảm nhiều nhất</option>
@@ -436,17 +419,16 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         </div>
       </div>
 
-      {/* 2. Factual Summary Metric Highlights (Purely quantitative numbers, no subjective commentary) */}
+      {/* 2. Factual Summary Metric Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         {/* Card 1: Top Dropping Channel */}
-        <div className="p-3.5 rounded-xl border bg-rose-50/60 border-rose-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-rose-800 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>Nguồn Sụt Giảm Sâu Nhất</span>
+            <span className="font-semibold text-slate-800">
+              Nguồn Sụt Giảm Sâu Nhất
             </span>
             {topDroppingChannel && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-200 text-rose-900">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-rose-50 text-rose-700 border border-rose-200">
                 Chiếm {topDroppingChannel.dropContributionPct}% lượng hụt
               </span>
             )}
@@ -454,40 +436,38 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           {topDroppingChannel ? (
             <div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-base font-black text-rose-900 font-mono">
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   {topDroppingChannel.name}
                 </span>
-                <span className="text-xs font-bold text-rose-700 font-mono">
+                <span className="text-xs font-bold text-rose-600 font-mono">
                   {formatNumber(topDroppingChannel.delta)} PV ({topDroppingChannel.pctChange}%)
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                <span>Tuần này: <strong className="font-mono">{formatNumber(topDroppingChannel.currentVal)} PV</strong></span>
-                <span>Trung vị: <strong className="font-mono">{formatNumber(topDroppingChannel.medianVal)} PV</strong></span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono text-slate-700">{formatNumber(topDroppingChannel.currentVal)}</strong></span>
+                <span>Trung vị: <strong className="font-mono text-slate-700">{formatNumber(topDroppingChannel.medianVal)}</strong></span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-emerald-700 font-medium mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Tất cả các nguồn lưu lượng tuần này đều đạt hoặc vượt mốc Trung vị chuẩn!
             </p>
           )}
         </div>
 
         {/* Card 2: Macro Balance - Internal vs External */}
-        <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-slate-800 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-slate-600 shrink-0" />
-              <span>Cán Cân External vs. Internal</span>
+            <span className="font-semibold text-slate-800">
+              Cán Cân External vs. Internal
             </span>
           </div>
           <div className="space-y-1.5 mt-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-slate-600 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="text-slate-500 flex items-center gap-1">
                 <span>External:</span>
               </span>
-              <span className="font-mono font-bold">
+              <span className="font-mono text-slate-800 font-semibold text-xs">
                 {formatNumber(macroStats.extCurrent)} PV{' '}
                 <span className={macroStats.extDelta < 0 ? 'text-rose-600' : 'text-emerald-600'}>
                   ({macroStats.extDelta > 0 ? '+' : ''}{formatNumber(macroStats.extDelta)} | {macroStats.extPct}%)
@@ -495,11 +475,10 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-slate-600 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              <span className="text-slate-500 flex items-center gap-1">
                 <span>Internal:</span>
               </span>
-              <span className="font-mono font-bold">
+              <span className="font-mono text-slate-800 font-semibold text-xs">
                 {formatNumber(macroStats.intCurrent)} PV{' '}
                 <span className={macroStats.intDelta < 0 ? 'text-rose-600' : 'text-emerald-600'}>
                   ({macroStats.intDelta > 0 ? '+' : ''}{formatNumber(macroStats.intDelta)} | {macroStats.intPct}%)
@@ -510,35 +489,34 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         </div>
 
         {/* Card 3: Top Growth Channel */}
-        <div className="p-3.5 rounded-xl border bg-emerald-50/60 border-emerald-200">
+        <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Nguồn Tăng Trưởng Tốt Nhất</span>
+            <span className="font-semibold text-slate-800">
+              Nguồn Tăng Trưởng Tốt Nhất
             </span>
             {topGrowthChannel && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-900">
-                +{topGrowthChannel.pctChange}% vs Trung vị
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                +{topGrowthChannel.pctChange}%
               </span>
             )}
           </div>
           {topGrowthChannel ? (
             <div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-base font-black text-emerald-900 font-mono">
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   {topGrowthChannel.name}
                 </span>
-                <span className="text-xs font-bold text-emerald-700 font-mono">
+                <span className="text-xs font-bold text-emerald-600 font-mono">
                   +{formatNumber(topGrowthChannel.delta)} PV
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
-                <span>Tuần này: <strong className="font-mono">{formatNumber(topGrowthChannel.currentVal)} PV</strong></span>
-                <span>Trung vị: <strong className="font-mono">{formatNumber(topGrowthChannel.medianVal)} PV</strong></span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono text-slate-700">{formatNumber(topGrowthChannel.currentVal)}</strong></span>
+                <span>Trung vị: <strong className="font-mono text-slate-700">{formatNumber(topGrowthChannel.medianVal)}</strong></span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Chưa có nguồn nào vượt mốc trung vị trong tuần hiện tại.
             </p>
           )}
@@ -547,25 +525,24 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
 
       {/* 3. Multi-Week Trend Chart (Triggered by Button) */}
       {showTrendChart && (
-        <div className="mb-5 p-4 rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/30 to-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-indigo-100">
+        <div className="mb-5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/60">
             <div className="flex items-center gap-2">
-              <LineChartIcon className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-xs font-bold text-slate-900">
-                Biểu đồ Xu hướng qua {allWeeks.length} Tuần quan sát
+              <h3 className="text-xs font-bold text-slate-800">
+                Xu hướng qua {allWeeks.length} Tuần quan sát
               </h3>
-              <span className="text-[11px] text-slate-500">
-                (Đường nét đứt đánh dấu tuần: <strong>{currentWeek.shortLabel}</strong>)
+              <span className="text-[11px] text-slate-400">
+                (Đường nét đứt: <strong className="text-slate-600">{currentWeek.shortLabel}</strong>)
               </span>
             </div>
 
             {/* Mode switch: Chi tiết từng nguồn vs Nhóm Macro */}
-            <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-semibold">
+            <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-medium">
               <button
                 onClick={() => setChartMode('detail')}
                 className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
                   chartMode === 'detail'
-                    ? 'bg-indigo-600 text-white font-bold'
+                    ? 'bg-slate-900 text-white font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -575,7 +552,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                 onClick={() => setChartMode('macro')}
                 className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
                   chartMode === 'macro'
-                    ? 'bg-indigo-600 text-white font-bold'
+                    ? 'bg-slate-900 text-white font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -708,17 +685,11 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                       <span className="font-mono text-[13px] font-bold text-slate-900">
                         {row.name}
                       </span>
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                          row.type === 'internal'
-                            ? 'bg-indigo-50 text-indigo-700'
-                            : 'bg-emerald-50 text-emerald-700'
-                        }`}
-                      >
+                      <span className="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                         {row.type === 'internal' ? 'Internal' : 'External'}
                       </span>
                       {isSelected && (
-                        <span className="text-[10px] text-blue-600 font-bold">
+                        <span className="text-[10px] text-slate-900 font-bold font-mono">
                           &bull; Đang chọn
                         </span>
                       )}
@@ -727,10 +698,10 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
 
                   {/* Current Share vs Median Share */}
                   <td className="py-2.5 px-3 text-right">
-                    <div className="font-mono font-bold text-slate-900">
+                    <div className="font-mono font-semibold text-slate-900">
                       {row.currentShare}%
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-400 font-mono">
                       Chuẩn: {row.medianShare}%
                     </div>
                   </td>
@@ -740,44 +711,39 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                     <div className="font-mono font-bold text-slate-900">
                       {formatNumber(row.currentVal)}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-400 font-mono">
                       {row.wowPct !== undefined ? (
-                        <span className={row.wowPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                        <span className={row.wowPct >= 0 ? 'text-emerald-700 font-medium' : 'text-rose-700 font-medium'}>
                           WoW: {row.wowPct >= 0 ? '+' : ''}{row.wowPct}%
                         </span>
                       ) : (
-                        'Tuần đầu tiên'
+                        'Tuần đầu'
                       )}
                     </div>
                   </td>
 
                   {/* Median Value */}
                   <td className="py-2.5 px-4 text-right">
-                    <div className="font-mono font-bold text-slate-700">
+                    <div className="font-mono font-medium text-slate-700">
                       {formatNumber(row.medianVal)}
                     </div>
-                    <div className="text-[10px] text-slate-400">
-                      Mốc chuẩn {allWeeks.length} tuần
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      Chuẩn {allWeeks.length}T
                     </div>
                   </td>
 
                   {/* Delta & Percentage vs Median */}
                   <td className="py-2.5 px-4 text-right">
                     <div
-                      className={`font-mono font-bold flex items-center justify-end gap-1 ${
-                        isDrop ? 'text-rose-600' : 'text-emerald-600'
+                      className={`font-mono font-semibold flex items-center justify-end gap-1 ${
+                        isDrop ? 'text-rose-700' : 'text-emerald-700'
                       }`}
                     >
-                      {isDrop ? (
-                        <ArrowDownRight className="w-3.5 h-3.5 shrink-0" />
-                      ) : (
-                        <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
-                      )}
                       <span>
                         {row.delta > 0 ? '+' : ''}
                         {formatNumber(row.delta)}
                       </span>
-                      <span className="text-[11px] font-semibold">
+                      <span className="text-[11px] font-normal">
                         ({row.pctChange > 0 ? '+' : ''}{row.pctChange}%)
                       </span>
                     </div>
