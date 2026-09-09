@@ -155,6 +155,25 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
     return calculateMedian(weeklyTotals);
   }, [allWeeks, weeklyCatPvMap]);
 
+  // Total WoW pct across all subfolders
+  const totalWoWPct = useMemo(() => {
+    const currentIndex = allWeeks.findIndex((w) => w.weekKey === selectedWeekKey);
+    if (currentIndex > 0) {
+      const prevWeekKey = allWeeks[currentIndex - 1].weekKey;
+      const prevCatMap = weeklyCatPvMap.get(prevWeekKey);
+      if (prevCatMap) {
+        let prevTotal = 0;
+        prevCatMap.forEach((v) => {
+          prevTotal += v;
+        });
+        if (prevTotal > 0) {
+          return Number((((currentWeekTotalPV - prevTotal) / prevTotal) * 100).toFixed(1));
+        }
+      }
+    }
+    return undefined;
+  }, [allWeeks, selectedWeekKey, weeklyCatPvMap, currentWeekTotalPV]);
+
   // Compute Subfolder rows with Median, Deltas, Shares (Strictly factual math)
   const allSubfolderRows = useMemo<SubfolderRowData[]>(() => {
     const rawRows = categories.map((catName, idx) => {
@@ -896,7 +915,12 @@ export const WeeklyCategoryShareChart: React.FC<WeeklyCategoryShareChartProps> =
                 100%
               </td>
               <td className="py-3 px-4 text-right font-mono text-sm text-slate-950">
-                {formatNumber(currentWeekTotalPV)}
+                <div>{formatNumber(currentWeekTotalPV)}</div>
+                {totalWoWPct !== undefined && (
+                  <div className={`text-[10px] font-medium ${totalWoWPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    WoW: {totalWoWPct >= 0 ? '+' : ''}{totalWoWPct}%
+                  </div>
+                )}
               </td>
               <td className="py-3 px-4 text-right font-mono text-slate-700">
                 {formatNumber(medianTotalPV)}

@@ -49,6 +49,8 @@ interface ChannelRowData {
   pctChange: number;
   isDecline: boolean;
   dropContributionPct: number;
+  wowPct?: number;
+  prevVal?: number;
 }
 
 const CHANNEL_DEFS = [
@@ -78,6 +80,7 @@ const getChannelValue = (w: WeeklySummary, key: string): number => {
 export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProps> = ({
   allWeeks,
   currentWeek,
+  prevWeek,
   onSelectWeek,
 }) => {
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
@@ -85,6 +88,16 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
   const [selectedChannelKey, setSelectedChannelKey] = useState<string | null>(null);
   const [showTrendChart, setShowTrendChart] = useState<boolean>(false);
   const [chartMode, setChartMode] = useState<ChartMode>('detail');
+
+  // Identify previous week
+  const previousWeek = useMemo(() => {
+    if (prevWeek) return prevWeek;
+    const currentIndex = allWeeks.findIndex((w) => w.weekKey === currentWeek?.weekKey);
+    if (currentIndex > 0) {
+      return allWeeks[currentIndex - 1];
+    }
+    return null;
+  }, [prevWeek, allWeeks, currentWeek]);
 
   // Total current week traffic
   const currentWeekTotalPV = useMemo(() => {
@@ -109,6 +122,15 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
       const currentShare = currentWeekTotalPV > 0 ? Number(((currentVal / currentWeekTotalPV) * 100).toFixed(1)) : 0;
       const medianShare = medianTotalPV > 0 ? Number(((medianVal / medianTotalPV) * 100).toFixed(1)) : 0;
 
+      // Calculate WoW vs previous week
+      const prevVal = previousWeek ? getChannelValue(previousWeek, ch.key) : undefined;
+      let wowPct: number | undefined = undefined;
+      if (prevVal !== undefined && prevVal > 0) {
+        wowPct = Number((((currentVal - prevVal) / prevVal) * 100).toFixed(1));
+      } else if (prevVal === 0 && currentVal > 0) {
+        wowPct = 100;
+      }
+
       return {
         key: ch.key,
         name: ch.name,
@@ -121,6 +143,8 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         delta,
         pctChange,
         isDecline: delta < 0,
+        wowPct,
+        prevVal,
       };
     });
 
@@ -139,7 +163,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         dropContributionPct,
       };
     });
-  }, [allWeeks, currentWeek, currentWeekTotalPV, medianTotalPV]);
+  }, [allWeeks, currentWeek, previousWeek, currentWeekTotalPV, medianTotalPV]);
 
   // Filtered rows
   const filteredRows = useMemo(() => {
@@ -218,6 +242,18 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
       intPct,
     };
   }, [allWeeks, currentWeek]);
+
+  // Total previous week traffic and WoW for total
+  const prevWeekTotalPV = useMemo(() => {
+    return previousWeek ? (previousWeek.total_external || 0) + (previousWeek.total_internal || 0) : undefined;
+  }, [previousWeek]);
+
+  const totalWoWPct = useMemo(() => {
+    if (prevWeekTotalPV !== undefined && prevWeekTotalPV > 0) {
+      return Number((((currentWeekTotalPV - prevWeekTotalPV) / prevWeekTotalPV) * 100).toFixed(1));
+    }
+    return undefined;
+  }, [currentWeekTotalPV, prevWeekTotalPV]);
 
   // Multi-week trend series data for Recharts
   const trendChartData = useMemo(() => {
@@ -699,13 +735,19 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                     </div>
                   </td>
 
-                  {/* Current Week Value */}
+                  {/* Current Week Value & WoW */}
                   <td className="py-2.5 px-4 text-right">
                     <div className="font-mono font-bold text-slate-900">
                       {formatNumber(row.currentVal)}
                     </div>
-                    <div className="text-[10px] text-slate-400">
-                      Lưu lượng tuần {currentWeek.shortLabel}
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {row.wowPct !== undefined ? (
+                        <span className={row.wowPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                          WoW: {row.wowPct >= 0 ? '+' : ''}{row.wowPct}%
+                        </span>
+                      ) : (
+                        'Tuần đầu tiên'
+                      )}
                     </div>
                   </td>
 
@@ -765,7 +807,12 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                 100%
               </td>
               <td className="py-3 px-4 text-right font-mono text-sm text-slate-950">
-                {formatNumber(currentWeekTotalPV)}
+                <div>{formatNumber(currentWeekTotalPV)}</div>
+                {totalWoWPct !== undefined && (
+                  <div className={`text-[10px] font-medium ${totalWoWPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    WoW: {totalWoWPct >= 0 ? '+' : ''}{totalWoWPct}%
+                  </div>
+                )}
               </td>
               <td className="py-3 px-4 text-right font-mono text-slate-700">
                 {formatNumber(medianTotalPV)}
