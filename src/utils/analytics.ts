@@ -1,4 +1,4 @@
-import { RawRecord, DailySummary, CategorySummary, DailyAlert } from '../types';
+import { RawRecord, DailySummary, CategorySummary, DailyAlert, WeeklySummary, WeeklyCategorySummary } from '../types';
 
 /**
  * Calculate the median value of a numerical array
@@ -438,4 +438,380 @@ export function getDayOfWeekVi(dateStr: string, short: boolean = false): string 
   }
   const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
   return days[dayIndex];
+}
+
+/**
+ * Convert YYYY-MM-DD to ISO Week info
+ */
+export function getISOWeekInfo(dateStr: string): {
+  year: number;
+  week: number;
+  weekKey: string;
+  monday: string;
+  sunday: string;
+  label: string;
+  shortLabel: string;
+} {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target = new Date(Date.UTC(y, m - 1, d));
+  const dayNr = (target.getUTCDay() + 6) % 7; // 0 = Mon, 6 = Sun
+
+  const monday = new Date(target);
+  monday.setUTCDate(target.getUTCDate() - dayNr);
+
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+
+  const thursday = new Date(monday);
+  thursday.setUTCDate(monday.getUTCDate() + 3);
+  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
+  const weekNumber = 1 + Math.round(((thursday.getTime() - firstThursday.getTime()) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  const isoYear = thursday.getUTCFullYear();
+
+  const monStr = monday.toISOString().slice(0, 10);
+  const sunStr = sunday.toISOString().slice(0, 10);
+
+  const [, mM, mD] = monStr.split('-');
+  const [sY, sM, sD] = sunStr.split('-');
+  const label = `Tuần ${weekNumber} (${mD}/${mM} - ${sD}/${sM}/${sY})`;
+  const shortLabel = `Tuần ${weekNumber}`;
+  const weekKey = `${isoYear}-W${String(weekNumber).padStart(2, '0')}`;
+
+  return {
+    year: isoYear,
+    week: weekNumber,
+    weekKey,
+    monday: monStr,
+    sunday: sunStr,
+    label,
+    shortLabel,
+  };
+}
+
+/**
+ * Aggregate daily summaries into weekly summaries
+ */
+export function aggregateByWeek(records: RawRecord[]): WeeklySummary[] {
+  const dailyList = aggregateByDate(records);
+  if (dailyList.length === 0) return [];
+
+  // Group daily summaries by weekKey
+  const weekMap = new Map<string, DailySummary[]>();
+  dailyList.forEach((d) => {
+    const info = getISOWeekInfo(d.date);
+    if (!weekMap.has(info.weekKey)) {
+      weekMap.set(info.weekKey, []);
+    }
+    weekMap.get(info.weekKey)!.push(d);
+  });
+
+  // Sort week keys chronologically
+  const weekKeys = Array.from(weekMap.keys()).sort();
+
+  const weeklySummaries: WeeklySummary[] = weekKeys.map((wKey) => {
+    const days = weekMap.get(wKey)!.sort((a, b) => a.date.localeCompare(b.date));
+    const firstDay = days[0].date;
+    const weekInfo = getISOWeekInfo(firstDay);
+
+    const dayCount = days.length || 1;
+
+    // Sum metrics (Total for the week)
+    const pageview = days.reduce((sum, d) => sum + d.pageview, 0);
+    const session = days.reduce((sum, d) => sum + d.session, 0);
+    
+    // Average weekly metrics as requested: users, vne_user, stickiness are weekly averages (TB tuần)
+    const rawTotalUsers = days.reduce((sum, d) => sum + d.users, 0);
+    const users = Math.round(rawTotalUsers / dayCount);
+
+    const rawTotalVneUser = days.reduce((sum, d) => sum + d.vne_user, 0);
+    const vne_user = Math.round(rawTotalVneUser / dayCount);
+
+    const stickiness = Number((days.reduce((sum, d) => sum + d.stickiness, 0) / dayCount).toFixed(2));
+    const vne_user_ratio = users > 0 ? Number(((vne_user / users) * 100).toFixed(2)) : 0;
+
+    const latestMau = days[days.length - 1]?.mau || 0;
+
+    const E_Direct = days.reduce((sum, d) => sum + d.E_Direct, 0);
+    const E_Referrer = days.reduce((sum, d) => sum + d.E_Referrer, 0);
+    const E_Search = days.reduce((sum, d) => sum + d.E_Search, 0);
+    const E_Social = days.reduce((sum, d) => sum + d.E_Social, 0);
+    const I_Detail = days.reduce((sum, d) => sum + d.I_Detail, 0);
+    const I_Folder = days.reduce((sum, d) => sum + d.I_Folder, 0);
+    const I_Home = days.reduce((sum, d) => sum + d.I_Home, 0);
+    const I_Tag = days.reduce((sum, d) => sum + d.I_Tag, 0);
+    const I_Topic = days.reduce((sum, d) => sum + d.I_Topic, 0);
+    const I_24h = days.reduce((sum, d) => sum + d.I_24h, 0);
+    const I_Other = days.reduce((sum, d) => sum + d.I_Other, 0);
+
+    const total_external = E_Direct + E_Referrer + E_Search + E_Social;
+    const total_internal = I_Detail + I_Folder + I_Home + I_Tag + I_Topic + I_24h + I_Other;
+
+    const pv_per_session = session > 0 ? Number((pageview / session).toFixed(2)) : 0;
+    const pv_per_user = rawTotalUsers > 0 ? Number((pageview / rawTotalUsers).toFixed(2)) : 0;
+
+    // TRUNG VỊ TỪNG TUẦN (Weekly Daily Medians)
+    const median_daily_pageview = Math.round(calculateMedian(days.map((d) => d.pageview)));
+    const median_daily_users = Math.round(calculateMedian(days.map((d) => d.users)));
+    const median_daily_session = Math.round(calculateMedian(days.map((d) => d.session)));
+    const median_daily_vne_user = Math.round(calculateMedian(days.map((d) => d.vne_user)));
+    const median_daily_stickiness = Number(calculateMedian(days.map((d) => d.stickiness)).toFixed(2));
+
+    return {
+      weekKey: wKey,
+      weekNumber: weekInfo.week,
+      year: weekInfo.year,
+      label: weekInfo.label,
+      shortLabel: weekInfo.shortLabel,
+      startDate: weekInfo.monday,
+      endDate: weekInfo.sunday,
+      dayCount: days.length,
+      days,
+
+      pageview,
+      users,
+      session,
+      vne_user,
+      mau: latestMau,
+      stickiness,
+      total_external,
+      total_internal,
+
+      E_Direct,
+      E_Referrer,
+      E_Search,
+      E_Social,
+      I_Detail,
+      I_Folder,
+      I_Home,
+      I_Tag,
+      I_Topic,
+      I_24h,
+      I_Other,
+
+      pv_per_session,
+      pv_per_user,
+      vne_user_ratio,
+
+      median_daily_pageview,
+      median_daily_users,
+      median_daily_session,
+      median_daily_vne_user,
+      median_daily_stickiness,
+    };
+  });
+
+  // Calculate WoW (% vs previous week)
+  for (let i = 0; i < weeklySummaries.length; i++) {
+    const current = weeklySummaries[i];
+    const prev = i > 0 ? weeklySummaries[i - 1] : null;
+
+    if (prev && prev.pageview > 0) {
+      current.wow_pageview_pct = Number((((current.pageview - prev.pageview) / prev.pageview) * 100).toFixed(1));
+    }
+    if (prev && prev.median_daily_pageview > 0) {
+      current.wow_median_pageview_pct = Number((((current.median_daily_pageview - prev.median_daily_pageview) / prev.median_daily_pageview) * 100).toFixed(1));
+    }
+    if (prev && prev.users > 0) {
+      current.wow_users_pct = Number((((current.users - prev.users) / prev.users) * 100).toFixed(1));
+    }
+    if (prev && prev.session > 0) {
+      current.wow_session_pct = Number((((current.session - prev.session) / prev.session) * 100).toFixed(1));
+    }
+    if (prev && prev.stickiness > 0) {
+      current.wow_stickiness_pct = Number((((current.stickiness - prev.stickiness) / prev.stickiness) * 100).toFixed(1));
+    }
+    if (prev && prev.vne_user > 0) {
+      current.wow_vne_user_pct = Number((((current.vne_user - prev.vne_user) / prev.vne_user) * 100).toFixed(1));
+    }
+  }
+
+  // Calculate Median across all weeks
+  const allWeeksPv = weeklySummaries.map((w) => w.pageview);
+  const allWeeksDailyMedianPv = weeklySummaries.map((w) => w.median_daily_pageview);
+  const medianTotalPvAcrossWeeks = calculateMedian(allWeeksPv);
+  const medianDailyPvAcrossWeeks = calculateMedian(allWeeksDailyMedianPv);
+
+  weeklySummaries.forEach((w) => {
+    if (medianTotalPvAcrossWeeks > 0) {
+      w.vs_median_weeks_pageview_pct = Number((((w.pageview - medianTotalPvAcrossWeeks) / medianTotalPvAcrossWeeks) * 100).toFixed(1));
+    }
+    if (medianDailyPvAcrossWeeks > 0) {
+      w.vs_median_weeks_daily_pv_pct = Number((((w.median_daily_pageview - medianDailyPvAcrossWeeks) / medianDailyPvAcrossWeeks) * 100).toFixed(1));
+    }
+  });
+
+  return weeklySummaries;
+}
+
+/**
+ * Aggregate categories by week
+ */
+export function aggregateWeeklyCategory(
+  records: RawRecord[],
+  currentWeekKey: string,
+  prevWeekKey?: string
+): WeeklyCategorySummary[] {
+  const currRecords = records.filter((r) => getISOWeekInfo(r.date_days).weekKey === currentWeekKey);
+  const prevRecords = prevWeekKey
+    ? records.filter((r) => getISOWeekInfo(r.date_days).weekKey === prevWeekKey)
+    : [];
+
+  const totalCurrPv = currRecords.reduce((sum, r) => sum + r.pageview, 0);
+
+  const currCatMap = new Map<string, RawRecord[]>();
+  currRecords.forEach((r) => {
+    const cat = r.Catename || 'Khác / Trang chung';
+    if (!currCatMap.has(cat)) currCatMap.set(cat, []);
+    currCatMap.get(cat)!.push(r);
+  });
+
+  const prevCatMap = new Map<string, number>();
+  prevRecords.forEach((r) => {
+    const cat = r.Catename || 'Khác / Trang chung';
+    prevCatMap.set(cat, (prevCatMap.get(cat) || 0) + r.pageview);
+  });
+
+  const summaries: WeeklyCategorySummary[] = [];
+
+  currCatMap.forEach((catRecords, catName) => {
+    const dayMap = new Map<string, number>();
+    catRecords.forEach((r) => {
+      dayMap.set(r.date_days, (dayMap.get(r.date_days) || 0) + r.pageview);
+    });
+    const catDayCount = dayMap.size || 1;
+    const pageview = catRecords.reduce((sum, r) => sum + r.pageview, 0);
+    const session = catRecords.reduce((sum, r) => sum + r.session, 0);
+    const users = Math.round(catRecords.reduce((sum, r) => sum + r.users, 0) / catDayCount);
+    const vne_user = Math.round(catRecords.reduce((sum, r) => sum + r.vne_user, 0) / catDayCount);
+    const mau = catRecords[catRecords.length - 1]?.MAU || 0;
+    const stickiness = Number((catRecords.reduce((sum, r) => sum + (r.MAU > 0 ? (r.users / r.MAU) * 100 : 0), 0) / catDayCount).toFixed(2));
+    const share_pct = totalCurrPv > 0 ? Number(((pageview / totalCurrPv) * 100).toFixed(1)) : 0;
+
+    const total_external = catRecords.reduce((sum, r) => sum + r.E_Direct + r.E_Referrer + r.E_Search + r.E_Social, 0);
+    const total_internal = catRecords.reduce((sum, r) => sum + r.I_Detail + r.I_Folder + r.I_Home + r.I_Tag + r.I_Topic + r.I_24h + r.I_Other, 0);
+
+    const dailyPvs = Array.from(dayMap.values());
+    const median_daily_pageview = Math.round(calculateMedian(dailyPvs));
+
+    const prev_pageview = prevCatMap.get(catName);
+    let wow_pageview_pct: number | undefined;
+    if (prev_pageview !== undefined && prev_pageview > 0) {
+      wow_pageview_pct = Number((((pageview - prev_pageview) / prev_pageview) * 100).toFixed(1));
+    }
+
+    summaries.push({
+      category: catName,
+      pageview,
+      prev_pageview,
+      users,
+      session,
+      vne_user,
+      mau,
+      stickiness,
+      share_pct,
+      wow_pageview_pct,
+      median_daily_pageview,
+      total_external,
+      total_internal,
+    });
+  });
+
+  return summaries.sort((a, b) => b.pageview - a.pageview);
+}
+
+/**
+ * Generate weekly actionable follow-up alerts
+ */
+export function generateWeeklyFollowUpAlerts(
+  weeks: WeeklySummary[],
+  categories: WeeklyCategorySummary[],
+  currentWeekKey: string
+): DailyAlert[] {
+  const current = weeks.find((w) => w.weekKey === currentWeekKey);
+  if (!current) return [];
+
+  const currIdx = weeks.findIndex((w) => w.weekKey === currentWeekKey);
+  const prev = currIdx > 0 ? weeks[currIdx - 1] : null;
+
+  const alerts: DailyAlert[] = [];
+
+  // 1. WoW Performance
+  if (current.wow_pageview_pct !== undefined) {
+    if (current.wow_pageview_pct >= 10) {
+      alerts.push({
+        id: 'wow-pv-up',
+        type: 'positive',
+        date: current.startDate,
+        title: `Tăng trưởng tuần vượt trội (+${current.wow_pageview_pct}% WoW)`,
+        detail: `Tổng Pageview tuần này đạt ${formatNumber(current.pageview)} PV, tăng +${current.wow_pageview_pct}% so với tuần trước (${formatNumber(prev?.pageview)} PV). Mốc Trung vị ngày của tuần đạt ${formatNumber(current.median_daily_pageview)} PV/ngày (tăng ${current.wow_median_pageview_pct && current.wow_median_pageview_pct >= 0 ? `+${current.wow_median_pageview_pct}%` : `${current.wow_median_pageview_pct}%`}).`,
+        metric: 'Pageviews',
+        changePct: current.wow_pageview_pct,
+      });
+    } else if (current.wow_pageview_pct <= -10) {
+      alerts.push({
+        id: 'wow-pv-down',
+        type: 'warning',
+        date: current.startDate,
+        title: `Pageview tuần giảm so với tuần trước (${current.wow_pageview_pct}% WoW)`,
+        detail: `Tổng Pageview tuần này đạt ${formatNumber(current.pageview)} PV, giảm ${Math.abs(current.wow_pageview_pct)}% so với tuần trước (${formatNumber(prev?.pageview)} PV). Mốc trung vị ngày của tuần giảm về ${formatNumber(current.median_daily_pageview)} PV/ngày.`,
+        metric: 'Pageviews',
+        changePct: current.wow_pageview_pct,
+      });
+    }
+  }
+
+  // 2. Weekly Daily Median Performance ("Trung vị từng tuần")
+  if (current.wow_median_pageview_pct !== undefined && Math.abs(current.wow_median_pageview_pct) >= 15) {
+    alerts.push({
+      id: 'weekly-median-shift',
+      type: current.wow_median_pageview_pct > 0 ? 'positive' : 'warning',
+      date: current.startDate,
+      title: `Phong độ ngày chuẩn (Trung vị tuần) biến động ${current.wow_median_pageview_pct > 0 ? `+${current.wow_median_pageview_pct}%` : `${current.wow_median_pageview_pct}%`}`,
+      detail: `Mốc Trung vị ngày của tuần này đạt ${formatNumber(current.median_daily_pageview)} PV/ngày so với ${formatNumber(prev?.median_daily_pageview)} PV/ngày tuần trước. Phản ánh phong độ thực tế của từng ngày làm việc mà không bị chi phối bởi đột biến.`,
+      metric: 'Trung vị ngày',
+      changePct: current.wow_median_pageview_pct,
+    });
+  }
+
+  // 3. Category Outliers
+  categories.forEach((cat) => {
+    if (cat.wow_pageview_pct !== undefined && cat.wow_pageview_pct >= 25 && cat.pageview > 10000) {
+      alerts.push({
+        id: `cat-wow-up-${cat.category}`,
+        type: 'positive',
+        date: current.startDate,
+        category: cat.category,
+        title: `Chuyên mục "${cat.category}" tăng trưởng tuần ấn tượng (+${cat.wow_pageview_pct}% WoW)`,
+        detail: `Đạt ${formatNumber(cat.pageview)} PV trong tuần (chiếm ${cat.share_pct}% tỷ trọng), trung vị ngày đạt ${formatNumber(cat.median_daily_pageview)} PV/ngày.`,
+        metric: cat.category,
+        changePct: cat.wow_pageview_pct,
+      });
+    } else if (cat.wow_pageview_pct !== undefined && cat.wow_pageview_pct <= -20 && (cat.prev_pageview ?? 0) > 10000) {
+      alerts.push({
+        id: `cat-wow-down-${cat.category}`,
+        type: 'warning',
+        date: current.startDate,
+        category: cat.category,
+        title: `Chuyên mục "${cat.category}" giảm sâu so với tuần trước (${cat.wow_pageview_pct}% WoW)`,
+        detail: `Đạt ${formatNumber(cat.pageview)} PV tuần này so với ${formatNumber(cat.prev_pageview)} PV tuần trước. Cần rà soát lại tuyến đề tài.`,
+        metric: cat.category,
+        changePct: cat.wow_pageview_pct,
+      });
+    }
+  });
+
+  // Default alert if none
+  if (alerts.length === 0) {
+    alerts.push({
+      id: 'weekly-stable-alert',
+      type: 'info',
+      date: current.startDate,
+      title: `Tổng quan ${current.label}`,
+      detail: `Tuần ghi nhận ${formatNumber(current.pageview)} PV và ${formatNumber(current.users)} Users. Mốc Trung vị ngày của tuần đạt ${formatNumber(current.median_daily_pageview)} PV/ngày ${current.wow_pageview_pct !== undefined ? `(${current.wow_pageview_pct >= 0 ? `+${current.wow_pageview_pct}%` : `${current.wow_pageview_pct}%`} vs tuần trước)` : ''}.`,
+      metric: 'Nhịp độ tuần',
+      changePct: current.wow_pageview_pct || 0,
+    });
+  }
+
+  return alerts;
 }

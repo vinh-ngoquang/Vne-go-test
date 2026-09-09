@@ -7,6 +7,7 @@ interface FollowUpSummaryBannerProps {
   alerts: DailyAlert[];
   selectedDate: string;
   dodPageviewPct?: number;
+  wowPageviewPct?: number;
   vsMedianPageviewPct?: number;
   medianPv?: number;
 }
@@ -15,6 +16,7 @@ export const FollowUpSummaryBanner: React.FC<FollowUpSummaryBannerProps> = ({
   alerts,
   selectedDate,
   dodPageviewPct = 0,
+  wowPageviewPct,
   vsMedianPageviewPct = 0,
   medianPv,
 }) => {
@@ -30,11 +32,11 @@ export const FollowUpSummaryBanner: React.FC<FollowUpSummaryBannerProps> = ({
           </h2>
         </div>
 
-        {/* Primary comparison: Vs Median instead of DoD */}
+        {/* Primary comparison: Vs Median & Vs Last Week WoW */}
         <div className="flex items-center gap-2.5 text-xs flex-wrap">
           <div className="flex items-center gap-1.5">
             <BarChart2 className="w-4 h-4 text-amber-600" />
-            <span className="text-slate-600 font-medium">So với Trung vị chu kỳ:</span>
+            <span className="text-slate-600 font-medium">vs Trung vị chu kỳ:</span>
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono ${
                 isAboveMedian
@@ -46,10 +48,28 @@ export const FollowUpSummaryBanner: React.FC<FollowUpSummaryBannerProps> = ({
             </span>
           </div>
 
+          {wowPageviewPct !== undefined && (
+            <>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-600 font-medium">vs Cùng thứ tuần trước (WoW):</span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold font-mono ${
+                    wowPageviewPct >= 0
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  {wowPageviewPct >= 0 ? `+${wowPageviewPct}%` : `${wowPageviewPct}%`}
+                </span>
+              </div>
+            </>
+          )}
+
           <span className="text-slate-300">|</span>
 
           <span className="text-slate-500 text-[11px]">
-            DoD nhịp ngày: <strong className="font-mono">{dodPageviewPct > 0 ? `+${dodPageviewPct}%` : `${dodPageviewPct}%`}</strong>
+            DoD hôm trước: <strong className="font-mono">{dodPageviewPct > 0 ? `+${dodPageviewPct}%` : `${dodPageviewPct}%`}</strong>
           </span>
         </div>
       </div>

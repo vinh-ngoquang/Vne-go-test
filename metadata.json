@@ -1,6 +1,6 @@
 {
-  "name": "Daily Performance Tracking Dashboard",
-  "description": "Bảng theo dõi hiệu quả hoạt động hàng ngày (Daily Performance Follow-up Dashboard) theo subfolder, theo dõi tăng trưởng, biến động kênh và chất lượng tương tác.",
+  "name": "Performance Tracking Dashboard",
+  "description": "Bảng theo dõi hiệu quả hoạt động theo Tuần & Ngày (Performance Follow-up Dashboard) theo subfolder, so sánh tuần trước (WoW) và đối chuẩn qua mốc Trung vị từng tuần.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

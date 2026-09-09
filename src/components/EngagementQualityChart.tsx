@@ -1,5 +1,5 @@
 import React from 'react';
-import { DailySummary } from '../types';
+import { DailySummary, WeeklySummary } from '../types';
 import { calculateMedian, getDayOfWeekVi } from '../utils/analytics';
 import {
   ResponsiveContainer,
@@ -16,38 +16,65 @@ import {
 import { HeartHandshake, Info } from 'lucide-react';
 
 interface EngagementQualityChartProps {
-  data: DailySummary[];
-  selectedDate: string;
+  data?: DailySummary[];
+  weeklyData?: WeeklySummary[];
+  selectedDate?: string;
+  selectedWeekKey?: string;
   onSelectDate?: (date: string) => void;
+  onSelectWeek?: (weekKey: string) => void;
+  isWeekly?: boolean;
 }
 
 export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
-  data,
+  data = [],
+  weeklyData = [],
   selectedDate,
+  selectedWeekKey,
   onSelectDate,
+  onSelectWeek,
+  isWeekly = false,
 }) => {
-  const chartData = data.map((d) => ({
-    date: d.date,
-    displayDate: d.date.slice(5),
-    pvPerSession: d.pv_per_session,
-    pvPerUser: d.pv_per_user,
-    vneUserRatio: d.vne_user_ratio,
-    stickiness: d.stickiness,
-    isSelected: d.date === selectedDate,
-  }));
+  const chartData = isWeekly
+    ? weeklyData.map((w) => ({
+        key: w.weekKey,
+        displayDate: w.shortLabel,
+        label: w.label,
+        pvPerSession: w.pv_per_session,
+        pvPerUser: w.pv_per_user,
+        vneUserRatio: w.vne_user_ratio,
+        stickiness: w.stickiness,
+        isSelected: w.weekKey === selectedWeekKey,
+      }))
+    : data.map((d) => ({
+        key: d.date,
+        displayDate: d.date.slice(5),
+        label: `${getDayOfWeekVi(d.date)} • ${d.date}`,
+        pvPerSession: d.pv_per_session,
+        pvPerUser: d.pv_per_user,
+        vneUserRatio: d.vne_user_ratio,
+        stickiness: d.stickiness,
+        isSelected: d.date === selectedDate,
+      }));
+
+  const sourceItems = isWeekly ? weeklyData : data;
 
   // Calculate Medians instead of arithmetic means
-  const medianPvSession = data.length > 0
-    ? Number(calculateMedian(data.map((c) => c.pv_per_session)).toFixed(2))
-    : 0;
+  const medianPvSession =
+    sourceItems.length > 0
+      ? Number(calculateMedian(sourceItems.map((c) => c.pv_per_session)).toFixed(2))
+      : 0;
 
-  const medianVneRatio = data.length > 0
-    ? Number(calculateMedian(data.map((c) => c.vne_user_ratio)).toFixed(1))
-    : 0;
+  const medianVneRatio =
+    sourceItems.length > 0
+      ? Number(calculateMedian(sourceItems.map((c) => c.vne_user_ratio)).toFixed(1))
+      : 0;
 
-  const medianStickiness = data.length > 0
-    ? Number(calculateMedian(data.map((c) => c.stickiness)).toFixed(2))
-    : 0;
+  const medianStickiness =
+    sourceItems.length > 0
+      ? Number(calculateMedian(sourceItems.map((c) => c.stickiness)).toFixed(2))
+      : 0;
+
+  const selectedWeekObj = weeklyData.find((w) => w.weekKey === selectedWeekKey);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 mb-6">
@@ -56,7 +83,7 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
           <div className="flex items-center gap-2">
             <HeartHandshake className="w-5 h-5 text-rose-600" />
             <h2 className="text-base font-bold text-slate-900">
-              Theo dõi Chất lượng Bạn đọc &amp; Độ gắn kết (Engagement &amp; Loyalty Quality)
+              Theo dõi Chất lượng Bạn đọc &amp; Độ gắn kết {isWeekly ? 'theo Tuần' : ''} (Engagement &amp; Loyalty Quality)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -83,11 +110,15 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
             data={chartData}
             onClick={(state: any) => {
               if (state && state.activePayload && state.activePayload.length > 0) {
-                const clickedDate = state.activePayload[0].payload.date;
-                if (clickedDate && onSelectDate) onSelectDate(clickedDate);
+                const clickedKey = state.activePayload[0].payload.key;
+                if (isWeekly && onSelectWeek) {
+                  onSelectWeek(clickedKey);
+                } else if (!isWeekly && onSelectDate) {
+                  onSelectDate(clickedKey);
+                }
               }
             }}
-            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+            margin={{ top: 10, right: 15, left: 10, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="displayDate" tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
@@ -115,15 +146,17 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
                 if (!active || !payload || !payload.length) return null;
                 const d = payload[0].payload;
                 return (
-                  <div className="bg-slate-900 text-white text-xs p-3 rounded-lg shadow-lg border border-slate-800 space-y-1.5 min-w-[220px]">
+                  <div className="bg-slate-900 text-white text-xs p-3 rounded-lg shadow-lg border border-slate-800 space-y-1.5 min-w-[230px]">
                     <div className="font-bold text-slate-300 pb-1 border-b border-slate-800 flex items-center justify-between">
-                      <span>{getDayOfWeekVi(d.date)} &bull; {d.date}</span>
-                      {d.date === selectedDate && (
-                        <span className="text-[10px] bg-blue-600 px-1 rounded text-white font-semibold">Đang chọn</span>
+                      <span>{d.label}</span>
+                      {d.isSelected && (
+                        <span className="text-[10px] bg-blue-600 px-1.5 py-0.5 rounded text-white font-semibold">
+                          Đang chọn
+                        </span>
                       )}
                     </div>
                     <div className="flex justify-between gap-4 py-0.5 text-purple-300">
-                      <span>Độ gắn kết Stickiness (Users/MAU):</span>
+                      <span>Độ gắn kết Stickiness (TB):</span>
                       <span className="font-mono font-bold text-white">{d.stickiness}%</span>
                     </div>
                     <div className="flex justify-between gap-4 py-0.5">
@@ -131,11 +164,11 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
                       <span className="font-mono font-bold text-white">{d.pvPerSession}</span>
                     </div>
                     <div className="flex justify-between gap-4 py-0.5">
-                      <span className="text-indigo-400">PV trên mỗi Độc giả (PV/User):</span>
+                      <span className="text-indigo-400">Lượt xem/Độc giả (PV/User):</span>
                       <span className="font-mono font-bold text-white">{d.pvPerUser}</span>
                     </div>
                     <div className="flex justify-between gap-4 py-0.5 text-amber-300 border-t border-slate-800 pt-1">
-                      <span>Tỷ lệ Độc giả VnE đăng nhập:</span>
+                      <span>Tỷ lệ Độc giả VnE (TB):</span>
                       <span className="font-mono font-bold">{d.vneUserRatio}%</span>
                     </div>
                   </div>
@@ -156,7 +189,16 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
                 fontWeight: 600,
               }}
             />
-            {selectedDate && (
+            {isWeekly && selectedWeekObj ? (
+              <ReferenceLine
+                yAxisId="left"
+                x={selectedWeekObj.shortLabel}
+                stroke="#2563eb"
+                strokeDasharray="4 4"
+                strokeWidth={2}
+                strokeOpacity={0.8}
+              />
+            ) : selectedDate ? (
               <ReferenceLine
                 yAxisId="left"
                 x={selectedDate.slice(5)}
@@ -165,7 +207,7 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
                 strokeWidth={2}
                 strokeOpacity={0.8}
               />
-            )}
+            ) : null}
             <Bar
               yAxisId="left"
               dataKey="pvPerSession"
@@ -181,16 +223,16 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
               name="Lượt xem / Độc giả (PV / User)"
               stroke="#2563eb"
               strokeWidth={2.5}
-              dot={{ r: 3, fill: '#2563eb' }}
+              dot={{ r: 4, fill: '#2563eb' }}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="stickiness"
-              name="Độ gắn kết Stickiness (% Users/MAU)"
+              name="Độ gắn kết Stickiness (%)"
               stroke="#8b5cf6"
               strokeWidth={2.5}
-              dot={{ r: 3, fill: '#8b5cf6' }}
+              dot={{ r: 4, fill: '#8b5cf6' }}
             />
             <Line
               yAxisId="right"
@@ -200,7 +242,7 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
               stroke="#d97706"
               strokeWidth={2}
               strokeDasharray="3 2"
-              dot={{ r: 2.5, fill: '#d97706' }}
+              dot={{ r: 3, fill: '#d97706' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -209,7 +251,7 @@ export const EngagementQualityChart: React.FC<EngagementQualityChartProps> = ({
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
         <Info className="w-4 h-4 text-blue-600 shrink-0" />
         <span>
-          <strong>Lưu ý chất lượng:</strong> Sử dụng các mốc Trung vị giúp loại trừ ngày có bài tin bùng nổ ảo (clickbait ngắn hạn) làm lệch trung bình, cho bức tranh chân thực về mức độ gắn kết bền vững của bạn đọc.
+          <strong>Lưu ý chất lượng:</strong> Sử dụng các mốc Trung vị giúp loại trừ các tuần có tin tức giật gân bùng nổ ảo, phản ánh chất lượng gắn kết và thói quen đọc thực chất.
         </span>
       </div>
     </div>
