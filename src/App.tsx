@@ -11,7 +11,6 @@ import {
   calculateMedian,
 } from './utils/analytics';
 import { Header } from './components/Header';
-import { WeeklyFollowUpBanner } from './components/WeeklyFollowUpBanner';
 import { WeeklyKpiCards } from './components/WeeklyKpiCards';
 import { WeeklyTrendChart } from './components/WeeklyTrendChart';
 import { WeeklyCategoryShareChart } from './components/WeeklyCategoryShareChart';
@@ -391,15 +390,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {timeView === 'WEEK' && currentWeekSummary ? (
           <>
-            {/* 1. Weekly Executive Follow-up Banner */}
-            <WeeklyFollowUpBanner
-              currentWeek={currentWeekSummary}
-              prevWeek={prevWeekSummary}
-              categories={weeklyCategorySummaries}
-              medianWeeksPv={medianWeeksPv}
-            />
-
-            {/* 2. Weekly 5 KPI Score Cards with WoW, Median, Depth & Interactive selection */}
+            {/* 1. Weekly 5 KPI Score Cards with WoW, Median, Depth & Interactive selection */}
             <WeeklyKpiCards
               currentWeek={currentWeekSummary}
               prevWeek={prevWeekSummary}
