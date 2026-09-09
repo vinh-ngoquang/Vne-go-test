@@ -164,8 +164,8 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                   strokeOpacity={0.8}
                 />
               )}
-              <Bar dataKey="External" name="Nguồn Bên ngoài (E_* Social, Search, Direct)" fill="#10b981" stackId="a" />
-              <Bar dataKey="Internal" name="Điều hướng Nội bộ (I_* Home, Detail, Folder)" fill="#6366f1" stackId="a" />
+              <Bar dataKey="External" name="External" fill="#10b981" stackId="a" />
+              <Bar dataKey="Internal" name="Internal" fill="#6366f1" stackId="a" />
             </BarChart>
           ) : channelMode === 'external_detail' ? (
             <BarChart
@@ -200,10 +200,10 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                   strokeOpacity={0.8}
                 />
               )}
-              <Bar dataKey="E_Social" name="Social (Facebook, TikTok...)" fill="#3b82f6" stackId="e" />
-              <Bar dataKey="E_Search" name="Search (Google Tìm kiếm)" fill="#f59e0b" stackId="e" />
-              <Bar dataKey="E_Direct" name="Direct (Trực tiếp)" fill="#10b981" stackId="e" />
-              <Bar dataKey="E_Referrer" name="Referrer (Báo khác/Web ngoài)" fill="#8b5cf6" stackId="e" />
+              <Bar dataKey="E_Social" name="E_Social" fill="#3b82f6" stackId="e" />
+              <Bar dataKey="E_Search" name="E_Search" fill="#f59e0b" stackId="e" />
+              <Bar dataKey="E_Direct" name="E_Direct" fill="#10b981" stackId="e" />
+              <Bar dataKey="E_Referrer" name="E_Referrer" fill="#8b5cf6" stackId="e" />
             </BarChart>
           ) : (
             <BarChart
@@ -238,10 +238,10 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
                   strokeOpacity={0.8}
                 />
               )}
-              <Bar dataKey="I_Home" name="I_Home (Từ Trang chủ)" fill="#6366f1" stackId="i" />
-              <Bar dataKey="I_Detail" name="I_Detail (Từ Bài chi tiết)" fill="#06b6d4" stackId="i" />
-              <Bar dataKey="I_Folder" name="I_Folder (Từ Trang mục)" fill="#ec4899" stackId="i" />
-              <Bar dataKey="I_Other" name="I_Other (24h, Tag, Topic...)" fill="#94a3b8" stackId="i" />
+              <Bar dataKey="I_Home" name="I_Home" fill="#6366f1" stackId="i" />
+              <Bar dataKey="I_Detail" name="I_Detail" fill="#06b6d4" stackId="i" />
+              <Bar dataKey="I_Folder" name="I_Folder" fill="#ec4899" stackId="i" />
+              <Bar dataKey="I_Other" name="I_Other" fill="#94a3b8" stackId="i" />
             </BarChart>
           )}
         </ResponsiveContainer>
@@ -258,19 +258,23 @@ export const TrafficChannelDynamicsChart: React.FC<TrafficChannelDynamicsChartPr
           <div className="flex items-center gap-3 flex-wrap">
             <span className="inline-flex items-center gap-1 text-slate-600">
               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              Social: <strong>{formatNumber(selectedDaySummary.E_Social)}</strong>
+              E_Social: <strong>{formatNumber(selectedDaySummary.E_Social)}</strong>
             </span>
             <span className="inline-flex items-center gap-1 text-slate-600">
               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              Search: <strong>{formatNumber(selectedDaySummary.E_Search)}</strong>
+              E_Search: <strong>{formatNumber(selectedDaySummary.E_Search)}</strong>
             </span>
             <span className="inline-flex items-center gap-1 text-slate-600">
               <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-              Từ Trang chủ (I_Home): <strong>{formatNumber(selectedDaySummary.I_Home)}</strong>
+              I_Home: <strong>{formatNumber(selectedDaySummary.I_Home)}</strong>
             </span>
             <span className="inline-flex items-center gap-1 text-slate-600">
               <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-              Từ Bài đọc (I_Detail): <strong>{formatNumber(selectedDaySummary.I_Detail)}</strong>
+              I_Detail: <strong>{formatNumber(selectedDaySummary.I_Detail)}</strong>
+            </span>
+            <span className="inline-flex items-center gap-1 text-slate-600">
+              <span className="w-2 h-2 rounded-full bg-pink-500"></span>
+              I_Folder: <strong>{formatNumber(selectedDaySummary.I_Folder)}</strong>
             </span>
           </div>
         </div>

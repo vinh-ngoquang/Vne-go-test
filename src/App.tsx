@@ -437,6 +437,7 @@ export default function App() {
             <WeeklyTrafficDynamicsChart
               allWeeks={weeklySummaries}
               currentWeek={currentWeekSummary}
+              prevWeek={prevWeekSummary}
               onSelectWeek={setSelectedWeekKey}
             />
 
