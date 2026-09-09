@@ -7,12 +7,21 @@ import {
   ArrowUpRight,
   AlertTriangle,
   Sparkles,
-  Target,
   ArrowUpDown,
   Layers,
-  Info,
-  ChevronRight,
+  LineChart as LineChartIcon,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ReferenceLine,
+} from 'recharts';
 import { WeeklySummary } from '../types';
 import { formatNumber, calculateMedian } from '../utils/analytics';
 
@@ -25,6 +34,7 @@ interface WeeklyTrafficDynamicsChartProps {
 
 type FilterScope = 'all' | 'declining_only' | 'internal_only' | 'external_only';
 type SortField = 'delta_asc' | 'pct_asc' | 'current_val_desc' | 'name_asc';
+type ChartMode = 'detail' | 'macro';
 
 interface ChannelRowData {
   key: string;
@@ -39,8 +49,6 @@ interface ChannelRowData {
   pctChange: number;
   isDecline: boolean;
   dropContributionPct: number;
-  insight: string;
-  severity: 'severe_drop' | 'mild_drop' | 'stable' | 'growth';
 }
 
 const CHANNEL_DEFS = [
@@ -67,142 +75,16 @@ const getChannelValue = (w: WeeklySummary, key: string): number => {
   return (w as any)[key] || 0;
 };
 
-/**
- * Generate actionable diagnosis insight per channel based on data
- */
-const generateChannelInsight = (
-  channelKey: string,
-  delta: number,
-  pctChange: number,
-  dropContribution: number
-): { insight: string; severity: 'severe_drop' | 'mild_drop' | 'stable' | 'growth' } => {
-  const isDrop = delta < 0;
-  const absDeltaFormatted = formatNumber(Math.abs(delta));
-
-  let severity: 'severe_drop' | 'mild_drop' | 'stable' | 'growth' = 'stable';
-  if (pctChange <= -15) severity = 'severe_drop';
-  else if (pctChange < -3) severity = 'mild_drop';
-  else if (pctChange > 5) severity = 'growth';
-  else severity = 'stable';
-
-  switch (channelKey) {
-    case 'I_Home':
-      if (isDrop) {
-        return {
-          insight: `Thiếu hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Luồng click từ Trang chủ sụt giảm mạnh${
-            dropContribution >= 30 ? `, đóng góp tới ${dropContribution}% tổng lượng sụt giảm` : ''
-          }. Cần kiểm tra vị trí hiển thị box chuyên mục trên Trang chủ và tần suất đổi bài đinh.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Lưu lượng từ Trang chủ vận hành tốt (+${absDeltaFormatted} PV, +${pctChange}% so với mốc Trung vị chuẩn).`,
-        severity,
-      };
-
-    case 'I_Folder':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Độc giả ít chủ động vào duyệt trực tiếp trang mục. Cần kiểm tra giao diện trang mục và tiêu đề bài ghim đầu mục.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Lưu lượng đọc tại trang mục duy trì ổn định (+${pctChange}% vs Trung vị), bạn đọc gắn kết với chuyên mục tốt.`,
-        severity,
-      };
-
-    case 'I_Detail':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Luồng đọc tiếp bài liên quan sụt giảm. Cần tối ưu lại box gợi ý bài liên quan cuối bài viết (chọn bài hấp dẫn hơn).`,
-          severity,
-        };
-      }
-      return {
-        insight: `Tỷ lệ đọc tiếp và luân chuyển bài viết liên quan tốt (+${pctChange}% vs Trung vị), giữ chân độc giả hiệu quả.`,
-        severity,
-      };
-
-    case 'E_Social':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Kênh Mạng xã hội giảm sâu${
-            dropContribution >= 25 ? ` (chiếm ${dropContribution}% lượng hụt PV)` : ''
-          }. Thuật toán MXH siết reach hoặc thiếu bài thảo luận nóng, viral.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Lực kéo từ Mạng xã hội bùng nổ (+${pctChange}% vs Trung vị), các bài viết lan tỏa tốt trên các nền tảng ngoài.`,
-        severity,
-      };
-
-    case 'E_Search':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Lưu lượng tìm kiếm tự nhiên (Google Search) giảm. Cần rà soát bài viết chuẩn SEO và bắt kịp từ khóa theo xu hướng.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Lưu lượng tìm kiếm tự nhiên tăng trưởng tốt (+${pctChange}% vs Trung vị), tin tức đáp ứng chuẩn SEO và xu hướng tìm kiếm.`,
-        severity,
-      };
-
-    case 'E_Direct':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Lượng độc giả gõ trực tiếp URL/bookmark giảm nhẹ, cần gia tăng bài đinh độc quyền.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Lượng độc giả trung thành truy cập trực tiếp tăng (+${pctChange}% vs Trung vị), duy trì độ nhận diện thương hiệu cao.`,
-        severity,
-      };
-
-    case 'E_Referrer':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Giảm lượt dẫn nguồn từ báo chí đối tác và các trang ngoài liên kết.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Traffic từ liên kết ngoài và đối tác báo chí tích cực (+${pctChange}% vs Trung vị).`,
-        severity,
-      };
-
-    case 'I_Other':
-      if (isDrop) {
-        return {
-          insight: `Hụt ${absDeltaFormatted} PV (${pctChange}% vs Trung vị). Các luồng điều hướng khác (Tag, Topic chuyên đề, Dòng sự kiện 24h) giảm tương tác.`,
-          severity,
-        };
-      }
-      return {
-        insight: `Các luồng chuyên đề, Topic và Tag hoạt động ổn định (+${pctChange}% vs Trung vị).`,
-        severity,
-      };
-
-    default:
-      return {
-        insight: isDrop
-          ? `Thấp hơn mốc trung vị ${absDeltaFormatted} PV (${pctChange}%).`
-          : `Vượt mốc trung vị ${absDeltaFormatted} PV (+${pctChange}%).`,
-        severity,
-      };
-  }
-};
-
 export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProps> = ({
   allWeeks,
   currentWeek,
+  onSelectWeek,
 }) => {
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
   const [sortField, setSortField] = useState<SortField>('delta_asc'); // Default: Largest drop first
   const [selectedChannelKey, setSelectedChannelKey] = useState<string | null>(null);
+  const [showTrendChart, setShowTrendChart] = useState<boolean>(false);
+  const [chartMode, setChartMode] = useState<ChartMode>('detail');
 
   // Total current week traffic
   const currentWeekTotalPV = useMemo(() => {
@@ -215,7 +97,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
     return calculateMedian(weeklyTotals);
   }, [allWeeks]);
 
-  // Compute raw channel rows with median and deltas
+  // Compute raw channel rows with median and deltas (strictly mathematical)
   const allChannelRows = useMemo<ChannelRowData[]>(() => {
     const rawRows = CHANNEL_DEFS.map((ch) => {
       const valuesOnly = allWeeks.map((w) => getChannelValue(w, ch.key));
@@ -252,18 +134,9 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           ? Number(((Math.abs(r.delta) / totalDropPV) * 100).toFixed(1))
           : 0;
 
-      const { insight, severity } = generateChannelInsight(
-        r.key,
-        r.delta,
-        r.pctChange,
-        dropContributionPct
-      );
-
       return {
         ...r,
         dropContributionPct,
-        insight,
-        severity,
       };
     });
   }, [allWeeks, currentWeek, currentWeekTotalPV, medianTotalPV]);
@@ -298,7 +171,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
     return list;
   }, [allChannelRows, filterScope, sortField]);
 
-  // Executive summary metrics
+  // Highlights
   const topDroppingChannel = useMemo(() => {
     const drops = [...allChannelRows].filter((r) => r.delta < 0).sort((a, b) => a.delta - b.delta);
     return drops.length > 0 ? drops[0] : null;
@@ -309,7 +182,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
     return gains.length > 0 ? gains[0] : null;
   }, [allChannelRows]);
 
-  // Selected row for detail inspection
+  // Selected row for inspection
   const activeSelectedRow = useMemo(() => {
     if (selectedChannelKey) {
       return allChannelRows.find((r) => r.key === selectedChannelKey) || null;
@@ -343,18 +216,81 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
       intDelta,
       extPct,
       intPct,
-      primaryDriver:
-        extDelta < 0 && intDelta < 0
-          ? extDelta < intDelta
-            ? 'External'
-            : 'Internal'
-          : extDelta < 0
-          ? 'External'
-          : intDelta < 0
-          ? 'Internal'
-          : 'Both Healthy',
     };
   }, [allWeeks, currentWeek]);
+
+  // Multi-week trend series data for Recharts
+  const trendChartData = useMemo(() => {
+    return allWeeks.map((w) => {
+      const extTotal = w.total_external || 0;
+      const intTotal = w.total_internal || 0;
+      const grandTotal = extTotal + intTotal;
+      const otherVal = (w.I_Other || 0) + (w.I_24h || 0) + (w.I_Topic || 0) + (w.I_Tag || 0);
+
+      return {
+        weekKey: w.weekKey,
+        shortLabel: w.shortLabel,
+        label: w.label,
+        I_Folder: w.I_Folder || 0,
+        I_Home: w.I_Home || 0,
+        I_Detail: w.I_Detail || 0,
+        E_Social: w.E_Social || 0,
+        E_Search: w.E_Search || 0,
+        E_Direct: w.E_Direct || 0,
+        E_Referrer: w.E_Referrer || 0,
+        I_Other: otherVal,
+        External: extTotal,
+        Internal: intTotal,
+        GrandTotal: grandTotal,
+      };
+    });
+  }, [allWeeks]);
+
+  // Visible lines in the trend chart according to filter and chart mode
+  const visibleTrendLines = useMemo(() => {
+    if (chartMode === 'macro') {
+      return [
+        { key: 'External', name: 'External', color: '#10b981', strokeWidth: 2.5 },
+        { key: 'Internal', name: 'Internal', color: '#6366f1', strokeWidth: 2.5 },
+        { key: 'GrandTotal', name: 'Tổng Toàn Kênh', color: '#0f172a', strokeWidth: 2, strokeDasharray: '4 4' },
+      ];
+    }
+
+    if (filterScope === 'internal_only') {
+      return CHANNEL_DEFS.filter((c) => c.type === 'internal').map((c) => ({
+        key: c.key,
+        name: c.name,
+        color: c.color,
+        strokeWidth: selectedChannelKey === c.key ? 3 : 2,
+      }));
+    }
+
+    if (filterScope === 'external_only') {
+      return CHANNEL_DEFS.filter((c) => c.type === 'external').map((c) => ({
+        key: c.key,
+        name: c.name,
+        color: c.color,
+        strokeWidth: selectedChannelKey === c.key ? 3 : 2,
+      }));
+    }
+
+    if (filterScope === 'declining_only') {
+      const decliningKeys = new Set(allChannelRows.filter((r) => r.isDecline).map((r) => r.key));
+      return CHANNEL_DEFS.filter((c) => decliningKeys.has(c.key)).map((c) => ({
+        key: c.key,
+        name: c.name,
+        color: c.color,
+        strokeWidth: selectedChannelKey === c.key ? 3 : 2,
+      }));
+    }
+
+    return CHANNEL_DEFS.map((c) => ({
+      key: c.key,
+      name: c.name,
+      color: c.color,
+      strokeWidth: selectedChannelKey === c.key ? 3 : 2,
+    }));
+  }, [chartMode, filterScope, selectedChannelKey, allChannelRows]);
 
   // Max absolute delta for relative bar scaling
   const maxAbsDelta = useMemo(() => {
@@ -368,7 +304,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 mb-6">
-      {/* 1. Header & Quick Context */}
+      {/* 1. Header & Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
@@ -376,20 +312,31 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
             <h2 className="text-base font-bold text-slate-900">
               Động thái &amp; Nguồn Sụt giảm Pageview theo Tuần
             </h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-              Bảng Chẩn Đoán So Với Trung Vị
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
               Mốc {allWeeks.length} Tuần
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Bóc tách từng nguồn lưu lượng so với mốc Trung vị chuẩn &bull; Xác định chính xác nguồn chịu trách nhiệm sụt giảm
+            Bóc tách từng nguồn lưu lượng so với mốc Trung vị chuẩn &bull; Theo dõi độ lệch và mức độ đóng góp
           </p>
         </div>
 
         {/* Action / Filter Bar */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Toggle Button Hiện / Ẩn Biểu Đồ Xu Hướng */}
+          <button
+            onClick={() => setShowTrendChart(!showTrendChart)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+              showTrendChart
+                ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs ring-2 ring-indigo-200'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+            }`}
+            title="Bật hoặc tắt biểu đồ xu hướng nhiều tuần"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>{showTrendChart ? 'Ẩn Biểu Đồ Xu Hướng' : 'Hiện Biểu Đồ Xu Hướng'}</span>
+          </button>
+
           {/* Filter Scope Pills */}
           <div className="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold">
             <button
@@ -453,7 +400,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         </div>
       </div>
 
-      {/* 2. Top Executive Insight Diagnosis Cards */}
+      {/* 2. Factual Summary Metric Highlights (Purely quantitative numbers, no subjective commentary) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         {/* Card 1: Top Dropping Channel */}
         <div className="p-3.5 rounded-xl border bg-rose-50/60 border-rose-200">
@@ -478,9 +425,10 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                   {formatNumber(topDroppingChannel.delta)} PV ({topDroppingChannel.pctChange}%)
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
-                Tuần này: <strong>{formatNumber(topDroppingChannel.currentVal)} PV</strong> (Trung vị: <strong>{formatNumber(topDroppingChannel.medianVal)} PV</strong>). {topDroppingChannel.insight}
-              </p>
+              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono">{formatNumber(topDroppingChannel.currentVal)} PV</strong></span>
+                <span>Trung vị: <strong className="font-mono">{formatNumber(topDroppingChannel.medianVal)} PV</strong></span>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-emerald-700 font-medium mt-1">
@@ -495,19 +443,6 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
             <span className="font-bold text-slate-800 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-slate-600 shrink-0" />
               <span>Cán Cân External vs. Internal</span>
-            </span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-              macroStats.primaryDriver === 'External'
-                ? 'bg-amber-100 text-amber-800'
-                : macroStats.primaryDriver === 'Internal'
-                ? 'bg-purple-100 text-purple-800'
-                : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {macroStats.primaryDriver === 'External'
-                ? 'Hụt nguồn Ngoài'
-                : macroStats.primaryDriver === 'Internal'
-                ? 'Hụt nguồn Nội bộ'
-                : 'Đều ổn định'}
             </span>
           </div>
           <div className="space-y-1.5 mt-2 text-xs">
@@ -538,12 +473,12 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           </div>
         </div>
 
-        {/* Card 3: Best Growth / Stabilizer Channel */}
+        {/* Card 3: Top Growth Channel */}
         <div className="p-3.5 rounded-xl border bg-emerald-50/60 border-emerald-200">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="font-bold text-emerald-800 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Nguồn Giữ Nhịp Tốt Nhất</span>
+              <span>Nguồn Tăng Trưởng Tốt Nhất</span>
             </span>
             {topGrowthChannel && (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-900">
@@ -561,9 +496,10 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                   +{formatNumber(topGrowthChannel.delta)} PV
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
-                Đạt <strong>{formatNumber(topGrowthChannel.currentVal)} PV</strong>, vượt mốc trung vị chuẩn ({formatNumber(topGrowthChannel.medianVal)} PV), giữ nhịp lưu lượng quan trọng cho tuần này.
-              </p>
+              <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
+                <span>Tuần này: <strong className="font-mono">{formatNumber(topGrowthChannel.currentVal)} PV</strong></span>
+                <span>Trung vị: <strong className="font-mono">{formatNumber(topGrowthChannel.medianVal)} PV</strong></span>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-slate-500 mt-1">
@@ -573,13 +509,130 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
         </div>
       </div>
 
-      {/* 3. The Clean & Focused Data Table (Compact, No Overflow) */}
+      {/* 3. Multi-Week Trend Chart (Triggered by Button) */}
+      {showTrendChart && (
+        <div className="mb-5 p-4 rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/30 to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-indigo-100">
+            <div className="flex items-center gap-2">
+              <LineChartIcon className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-xs font-bold text-slate-900">
+                Biểu đồ Xu hướng qua {allWeeks.length} Tuần quan sát
+              </h3>
+              <span className="text-[11px] text-slate-500">
+                (Đường nét đứt đánh dấu tuần: <strong>{currentWeek.shortLabel}</strong>)
+              </span>
+            </div>
+
+            {/* Mode switch: Chi tiết từng nguồn vs Nhóm Macro */}
+            <div className="flex items-center gap-1 bg-white border border-slate-200 p-0.5 rounded-lg text-[11px] font-semibold">
+              <button
+                onClick={() => setChartMode('detail')}
+                className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                  chartMode === 'detail'
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Chi tiết từng nguồn
+              </button>
+              <button
+                onClick={() => setChartMode('macro')}
+                className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                  chartMode === 'macro'
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Nhóm Macro (Ext / Int)
+              </button>
+            </div>
+          </div>
+
+          {/* Chart Canvas */}
+          <div className="h-60 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={trendChartData}
+                onClick={(e: any) => {
+                  if (e && e.activePayload && e.activePayload.length > 0) {
+                    const clickedWeekKey = e.activePayload[0].payload?.weekKey;
+                    if (clickedWeekKey && onSelectWeek) onSelectWeek(clickedWeekKey);
+                  }
+                }}
+                margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="shortLabel"
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => {
+                    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+                    if (val >= 1000) return `${Math.round(val / 1000)}k`;
+                    return `${val}`;
+                  }}
+                  width={45}
+                />
+                <Tooltip
+                  formatter={(val: any, name: any) => [`${formatNumber(Number(val) || 0)} PV`, name]}
+                  labelFormatter={(label, payload) => {
+                    const item = payload && payload[0] ? payload[0].payload : null;
+                    return item ? `${item.label || item.shortLabel}` : `${label}`;
+                  }}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    borderColor: '#cbd5e1',
+                    fontSize: '11px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} iconType="circle" />
+                <ReferenceLine
+                  x={currentWeek.shortLabel}
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Tuần này (${currentWeek.shortLabel})`,
+                    position: 'top',
+                    fill: '#b91c1c',
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                />
+                {visibleTrendLines.map((line) => (
+                  <Line
+                    key={line.key}
+                    type="monotone"
+                    dataKey={line.key}
+                    name={line.name}
+                    stroke={line.color}
+                    strokeWidth={line.strokeWidth || 2}
+                    strokeDasharray={line.strokeDasharray}
+                    dot={{ r: selectedChannelKey === line.key ? 4 : 2, fill: line.color }}
+                    activeDot={{ r: 6 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* 4. The Clean Factual 5-Column Data Table */}
       <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-              <th className="py-2.5 px-4 min-w-[150px]">Nguồn Lưu Lượng</th>
-              <th className="py-2.5 px-3 text-center min-w-[90px]">Phân Loại</th>
+              <th className="py-2.5 px-4 min-w-[150px]">Kênh Nguồn (Channel)</th>
+              <th className="py-2.5 px-3 text-right min-w-[120px]">Tỷ Trọng Tuần Này</th>
               <th className="py-2.5 px-4 text-right min-w-[140px]">
                 Tuần Này ({currentWeek.shortLabel})
               </th>
@@ -609,7 +662,7 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                       : 'hover:bg-slate-50/80'
                   }`}
                 >
-                  {/* Channel Name (Unchanged exact name) */}
+                  {/* Channel Name */}
                   <td className="py-2.5 px-4 font-semibold text-slate-900">
                     <div className="flex items-center gap-2">
                       <span
@@ -619,44 +672,50 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
                       <span className="font-mono text-[13px] font-bold text-slate-900">
                         {row.name}
                       </span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                          row.type === 'internal'
+                            ? 'bg-indigo-50 text-indigo-700'
+                            : 'bg-emerald-50 text-emerald-700'
+                        }`}
+                      >
+                        {row.type === 'internal' ? 'Internal' : 'External'}
+                      </span>
                       {isSelected && (
                         <span className="text-[10px] text-blue-600 font-bold">
-                          &bull; Đang xem
+                          &bull; Đang chọn
                         </span>
                       )}
                     </div>
                   </td>
 
-                  {/* Type Badge */}
-                  <td className="py-2.5 px-3 text-center">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold ${
-                        row.type === 'internal'
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}
-                    >
-                      {row.type === 'internal' ? 'Internal' : 'External'}
-                    </span>
+                  {/* Current Share vs Median Share */}
+                  <td className="py-2.5 px-3 text-right">
+                    <div className="font-mono font-bold text-slate-900">
+                      {row.currentShare}%
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      Chuẩn: {row.medianShare}%
+                    </div>
                   </td>
 
-                  {/* Current Week Value & Share */}
+                  {/* Current Week Value */}
                   <td className="py-2.5 px-4 text-right">
                     <div className="font-mono font-bold text-slate-900">
                       {formatNumber(row.currentVal)}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium">
-                      {row.currentShare}% tổng tuần
+                    <div className="text-[10px] text-slate-400">
+                      Lưu lượng tuần {currentWeek.shortLabel}
                     </div>
                   </td>
 
-                  {/* Median Value & Share */}
+                  {/* Median Value */}
                   <td className="py-2.5 px-4 text-right">
                     <div className="font-mono font-bold text-slate-700">
                       {formatNumber(row.medianVal)}
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      {row.medianShare}% chuẩn
+                      Mốc chuẩn {allWeeks.length} tuần
                     </div>
                   </td>
 
@@ -696,61 +755,14 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
             })}
           </tbody>
 
-          {/* Table Footer: Subtotals & Grand Total */}
+          {/* Table Footer: Grand Total */}
           <tfoot>
-            {/* Subtotal External */}
-            <tr className="bg-emerald-50/40 font-bold border-t-2 border-slate-200 text-slate-900">
-              <td className="py-2.5 px-4 font-mono font-bold text-emerald-900">
-                External (Tổng Ngoài)
-              </td>
-              <td className="py-2.5 px-3 text-center">
-                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold">
-                  External
-                </span>
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono">
-                {formatNumber(macroStats.extCurrent)}
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono text-slate-600">
-                {formatNumber(macroStats.extMedian)}
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono">
-                <span className={macroStats.extDelta < 0 ? 'text-rose-600' : 'text-emerald-600'}>
-                  {macroStats.extDelta > 0 ? '+' : ''}{formatNumber(macroStats.extDelta)} ({macroStats.extPct > 0 ? '+' : ''}{macroStats.extPct}%)
-                </span>
-              </td>
-            </tr>
-
-            {/* Subtotal Internal */}
-            <tr className="bg-indigo-50/40 font-bold text-slate-900">
-              <td className="py-2.5 px-4 font-mono font-bold text-indigo-900">
-                Internal (Tổng Nội bộ)
-              </td>
-              <td className="py-2.5 px-3 text-center">
-                <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-800 font-bold">
-                  Internal
-                </span>
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono">
-                {formatNumber(macroStats.intCurrent)}
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono text-slate-600">
-                {formatNumber(macroStats.intMedian)}
-              </td>
-              <td className="py-2.5 px-4 text-right font-mono">
-                <span className={macroStats.intDelta < 0 ? 'text-rose-600' : 'text-emerald-600'}>
-                  {macroStats.intDelta > 0 ? '+' : ''}{formatNumber(macroStats.intDelta)} ({macroStats.intPct > 0 ? '+' : ''}{macroStats.intPct}%)
-                </span>
-              </td>
-            </tr>
-
-            {/* Grand Total */}
-            <tr className="bg-slate-100 font-black text-slate-900 border-t border-slate-300">
+            <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
               <td className="py-3 px-4 font-bold text-slate-900 text-[13px]">
-                TỔNG PAGEVIEW TOÀN KÊNH
+                TỔNG TOÀN BỘ NGUỒN (INTERNAL + EXTERNAL)
               </td>
-              <td className="py-3 px-3 text-center text-slate-400">
-                —
+              <td className="py-3 px-3 text-right font-bold text-slate-700 text-xs">
+                100%
               </td>
               <td className="py-3 px-4 text-right font-mono text-sm text-slate-950">
                 {formatNumber(currentWeekTotalPV)}
@@ -773,54 +785,6 @@ export const WeeklyTrafficDynamicsChart: React.FC<WeeklyTrafficDynamicsChartProp
           </tfoot>
         </table>
       </div>
-
-      {/* 4. Actionable Insight Detail Card for the Clicked / Selected Channel */}
-      {activeSelectedRow && (
-        <div className="mt-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-200">
-            <div className="flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: activeSelectedRow.color }}
-              ></span>
-              <span className="font-bold text-slate-900 font-mono text-sm">
-                {activeSelectedRow.name}
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  activeSelectedRow.type === 'internal'
-                    ? 'bg-indigo-100 text-indigo-800'
-                    : 'bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                {activeSelectedRow.type === 'internal' ? 'Internal' : 'External'}
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  activeSelectedRow.isDecline
-                    ? 'bg-rose-100 text-rose-800'
-                    : 'bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                {activeSelectedRow.isDecline
-                  ? `Hụt ${formatNumber(Math.abs(activeSelectedRow.delta))} PV (${activeSelectedRow.pctChange}%)`
-                  : `Vượt +${formatNumber(activeSelectedRow.delta)} PV (+${activeSelectedRow.pctChange}%)`}
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-500">
-              Nhấp vào bất kỳ dòng nào trên bảng để xem chẩn đoán nguồn đó
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
-            <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-slate-900 font-semibold">Chẩn đoán &amp; Khuyến nghị: </strong>
-              <span>{activeSelectedRow.insight}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
